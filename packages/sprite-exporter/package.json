@@ -1,0 +1,7 @@
+{
+  "name": "@eml/sprite-exporter",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Reserved for Milestone 7 exporters."
+}

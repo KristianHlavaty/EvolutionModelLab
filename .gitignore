@@ -1,0 +1,27 @@
+node_modules/
+.pnpm-store/
+dist/
+coverage/
+playwright-report/
+test-results/
+.tmp/
+.env
+*.local
+
+# Repository-local runtime state
+data/*.db
+data/*.db-*
+workspace/creatures/*
+exports/*
+
+# Keep empty runtime directories represented
+!data/.gitkeep
+!workspace/creatures/.gitkeep
+!exports/.gitkeep
+
+# Editor and OS noise
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.log
