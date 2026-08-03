@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 
 import { createSolidPng } from "../../test-fixtures/src/png.js";
-import { inspectPng, normalizeOriginalFilename } from "./index.js";
+import {
+  calculateCropRectangles,
+  inspectPng,
+  normalizeOriginalFilename,
+} from "./index.js";
 import type { ImageInspectionError } from "./index.js";
 
 const limits = {
@@ -38,5 +42,55 @@ describe("original filename metadata", () => {
       "dunkle.png",
     );
     expect(normalizeOriginalFilename("")).toBe("clipboard-image.png");
+  });
+});
+
+describe("contact-sheet geometry", () => {
+  it("calculates deterministic row-major crops with margins and gaps", () => {
+    const rectangles = calculateCropRectangles(210, 110, {
+      rows: 2,
+      columns: 5,
+      marginTop: 3,
+      marginRight: 7,
+      marginBottom: 5,
+      marginLeft: 7,
+      horizontalGap: 2,
+      verticalGap: 4,
+    });
+
+    expect(rectangles).toHaveLength(10);
+    expect(rectangles[0]).toEqual({
+      index: 0,
+      row: 0,
+      column: 0,
+      x: 7,
+      y: 3,
+      width: 37,
+      height: 49,
+    });
+    expect(rectangles[9]).toEqual({
+      index: 9,
+      row: 1,
+      column: 4,
+      x: 165,
+      y: 56,
+      width: 38,
+      height: 49,
+    });
+  });
+
+  it("rejects layouts whose margins consume the image", () => {
+    expect(() =>
+      calculateCropRectangles(20, 20, {
+        rows: 3,
+        columns: 3,
+        marginTop: 10,
+        marginRight: 10,
+        marginBottom: 10,
+        marginLeft: 10,
+        horizontalGap: 0,
+        verticalGap: 0,
+      }),
+    ).toThrow("Margins and gaps");
   });
 });

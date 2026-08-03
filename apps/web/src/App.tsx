@@ -40,6 +40,7 @@ import {
 } from "react-router-dom";
 
 import { api, jsonRequest } from "./api.ts";
+import { PromptHistoryPage, RoundWorkspacePage } from "./MilestoneTwo.tsx";
 import type { Candidate, Creature, DashboardData, Round } from "./types.ts";
 
 function formatDate(value: string): string {
@@ -346,6 +347,7 @@ function CreaturesPage() {
             <option value="DRAFT">Draft</option>
             <option value="CONCEPT">Concept</option>
             <option value="CANDIDATE_SELECTED">Candidate selected</option>
+            <option value="REFINING">Refining</option>
           </select>
         </label>
       </div>
@@ -564,11 +566,21 @@ function CreatureDetailPage() {
         title={creature.displayName}
         description={creature.scientificName || "Scientific name not set"}
         action={
-          <span
-            className={`status-pill large status-${creature.status.toLowerCase()}`}
-          >
-            {statusLabel(creature.status)}
-          </span>
+          <div className="header-actions">
+            {creature.roundCount > 0 && (
+              <Link
+                className="button secondary"
+                to={`/creatures/${creature.id}/prompts`}
+              >
+                <History size={16} /> Prompt history
+              </Link>
+            )}
+            <span
+              className={`status-pill large status-${creature.status.toLowerCase()}`}
+            >
+              {statusLabel(creature.status)}
+            </span>
+          </div>
         }
       />
       {actionError && <ErrorPanel message={actionError} />}
@@ -629,12 +641,16 @@ function CreatureDetailPage() {
               <h2>
                 {creature.status === "CONCEPT"
                   ? "Import concept images"
-                  : "Selection saved"}
+                  : creature.status === "REFINING"
+                    ? "Import refinement images"
+                    : "Selection saved"}
               </h2>
               <p>
                 {creature.status === "CONCEPT"
                   ? "Add one to ten PNG results and review the numbered gallery."
-                  : "Your chosen parent is persisted. Refinement arrives in Milestone 2."}
+                  : creature.status === "REFINING"
+                    ? "Import refinements, compare them, and select the next parent."
+                    : "Record structured feedback and create the next refinement round."}
               </p>
               <Link
                 className="button primary full"
@@ -707,7 +723,7 @@ function CreatureDetailPage() {
   );
 }
 
-function RoundPage() {
+export function MilestoneOneRoundPage() {
   const { creatureId, roundId } = useParams();
   const {
     data: round,
@@ -1000,7 +1016,7 @@ function FutureFeaturePage({
       <PageHeader
         eyebrow="Planned capability"
         title={title}
-        description={`This surface is intentionally deferred to ${milestone}. Milestone 1 does not expose non-functional actions.`}
+        description={`This surface is intentionally deferred to ${milestone}. Milestone 2 does not expose non-functional actions.`}
       />
       <div className="panel future-panel">
         <FlaskConical size={34} />
@@ -1028,7 +1044,11 @@ export function App() {
         <Route path="/creatures/:creatureId" element={<CreatureDetailPage />} />
         <Route
           path="/creatures/:creatureId/rounds/:roundId"
-          element={<RoundPage />}
+          element={<RoundWorkspacePage />}
+        />
+        <Route
+          path="/creatures/:creatureId/prompts"
+          element={<PromptHistoryPage />}
         />
         <Route
           path="/creatures/:creatureId/evolution"

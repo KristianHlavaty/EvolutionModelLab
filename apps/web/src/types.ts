@@ -1,3 +1,17 @@
+export interface CandidateFeedback {
+  candidateId: string;
+  preserveTraits: string[];
+  anatomyToPreserve: string[];
+  paletteToPreserve: string[];
+  silhouetteToPreserve: string[];
+  defects: string[];
+  requestedChanges: string[];
+  forbiddenChanges: string[];
+  generalNotes: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Candidate {
   id: string;
   generationRoundId: string;
@@ -14,6 +28,14 @@ export interface Candidate {
   thumbnailUrl: string;
   imageUrl: string;
   createdAt: string;
+  crop: {
+    contactSheetImportId: string;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  } | null;
+  feedback: CandidateFeedback | null;
 }
 
 export interface Round {
@@ -23,7 +45,52 @@ export interface Round {
   roundType: string;
   generatedPrompt: string;
   createdAt: string;
+  parentCandidate: Candidate | null;
+  feedbackSnapshot: Omit<
+    CandidateFeedback,
+    "candidateId" | "createdAt" | "updatedAt"
+  > | null;
   candidates: Candidate[];
+}
+
+export interface PromptHistoryEntry {
+  roundId: string;
+  roundNumber: number;
+  roundType: string;
+  createdAt: string;
+  parentCandidate: Candidate | null;
+  generatedPrompt: string;
+  feedbackSnapshot: Round["feedbackSnapshot"];
+}
+
+export interface ContactSheetPreview {
+  id: string;
+  generationRoundId: string;
+  originalFilename: string;
+  width: number;
+  height: number;
+  imageUrl: string;
+  layout: {
+    rows: number;
+    columns: number;
+    marginTop: number;
+    marginRight: number;
+    marginBottom: number;
+    marginLeft: number;
+    horizontalGap: number;
+    verticalGap: number;
+  };
+  rectangles: Array<{
+    index: number;
+    row: number;
+    column: number;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  }>;
+  status: string;
+  createdAt: string;
 }
 
 export interface Creature {

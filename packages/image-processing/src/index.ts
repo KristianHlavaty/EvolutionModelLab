@@ -20,6 +20,27 @@ export interface InspectedPng {
   thumbnail: Buffer;
 }
 
+export interface ContactSheetLayout {
+  rows: number;
+  columns: number;
+  marginTop: number;
+  marginRight: number;
+  marginBottom: number;
+  marginLeft: number;
+  horizontalGap: number;
+  verticalGap: number;
+}
+
+export interface CropRectangle {
+  index: number;
+  row: number;
+  column: number;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
 export class ImageInspectionError extends Error {
   constructor(
     message: string,
@@ -112,6 +133,101 @@ export async function inspectPng(
     throw new ImageInspectionError(
       "The PNG is corrupt or could not be decoded.",
       "INVALID_PNG",
+    );
+  }
+}
+
+export function calculateCropRectangles(
+  imageWidth: number,
+  imageHeight: number,
+  layout: ContactSheetLayout,
+): CropRectangle[] {
+  const integers = [
+    imageWidth,
+    imageHeight,
+    layout.rows,
+    layout.columns,
+    layout.marginTop,
+    layout.marginRight,
+    layout.marginBottom,
+    layout.marginLeft,
+    layout.horizontalGap,
+    layout.verticalGap,
+  ];
+  if (integers.some((value) => !Number.isInteger(value))) {
+    throw new ImageInspectionError(
+      "Contact-sheet dimensions must be whole pixels.",
+      "INVALID_CONTACT_SHEET_LAYOUT",
+    );
+  }
+  if (
+    imageWidth < 1 ||
+    imageHeight < 1 ||
+    layout.rows < 1 ||
+    layout.columns < 1 ||
+    integers.slice(4).some((value) => value < 0)
+  ) {
+    throw new ImageInspectionError(
+      "Contact-sheet layout values are outside the supported range.",
+      "INVALID_CONTACT_SHEET_LAYOUT",
+    );
+  }
+  const usableWidth =
+    imageWidth -
+    layout.marginLeft -
+    layout.marginRight -
+    (layout.columns - 1) * layout.horizontalGap;
+  const usableHeight =
+    imageHeight -
+    layout.marginTop -
+    layout.marginBottom -
+    (layout.rows - 1) * layout.verticalGap;
+  if (usableWidth < layout.columns || usableHeight < layout.rows) {
+    throw new ImageInspectionError(
+      "Margins and gaps leave no usable pixels for one or more crops.",
+      "INVALID_CONTACT_SHEET_LAYOUT",
+    );
+  }
+
+  const rectangles: CropRectangle[] = [];
+  for (let row = 0; row < layout.rows; row += 1) {
+    const yStart = Math.floor((row * usableHeight) / layout.rows);
+    const yEnd = Math.floor(((row + 1) * usableHeight) / layout.rows);
+    for (let column = 0; column < layout.columns; column += 1) {
+      const xStart = Math.floor((column * usableWidth) / layout.columns);
+      const xEnd = Math.floor(((column + 1) * usableWidth) / layout.columns);
+      rectangles.push({
+        index: rectangles.length,
+        row,
+        column,
+        x: layout.marginLeft + xStart + column * layout.horizontalGap,
+        y: layout.marginTop + yStart + row * layout.verticalGap,
+        width: xEnd - xStart,
+        height: yEnd - yStart,
+      });
+    }
+  }
+  return rectangles;
+}
+
+export async function cropPng(
+  buffer: Buffer,
+  rectangle: Pick<CropRectangle, "x" | "y" | "width" | "height">,
+): Promise<Buffer> {
+  try {
+    return await sharp(buffer, { failOn: "error" })
+      .extract({
+        left: rectangle.x,
+        top: rectangle.y,
+        width: rectangle.width,
+        height: rectangle.height,
+      })
+      .png({ compressionLevel: 8 })
+      .toBuffer();
+  } catch {
+    throw new ImageInspectionError(
+      "A contact-sheet crop could not be generated.",
+      "CONTACT_SHEET_CROP_FAILED",
     );
   }
 }

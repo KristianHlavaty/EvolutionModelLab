@@ -2,7 +2,7 @@
 
 Evolution Model Lab is a local-first workspace for AI-assisted creature design. It stores creature briefs, deterministic ChatGPT prompts, imported concept candidates, durable selection state, and recoverable history without calling an image-generation API.
 
-Milestone 1 is the current release. It provides a real concept vertical slice: create a creature, create Concept Round 1, take the saved prompt to an ordinary ChatGPT conversation, import one to ten PNG results, review a numbered gallery, and select exactly one parent candidate.
+Milestone 2 is the current release. It extends the real concept workflow with ordered feedback, immutable refinement rounds, prompt history, two-candidate visual comparison, and confirmed contact-sheet splitting. ChatGPT remains a manual handoff: the application builds and saves prompts but does not call an image-generation API.
 
 > Screenshot placeholder: screenshots will be captured after the visual-review workflow stabilizes.
 
@@ -17,7 +17,7 @@ C:\Users\krist\Desktop\coding\EvolutionModelLab
 There is no nested repository folder. Runtime state remains inside this repository:
 
 - SQLite database: `data/evolution-model-lab.db`
-- Creature originals, thumbnails, prompts, and manifests: `workspace/creatures/`
+- Creature originals, contact-sheet originals, derived crops, thumbnails, prompts, and manifests: `workspace/creatures/`
 - Future game-ready packages: `exports/`
 
 These runtime files are ignored by Git. Imported originals are never modified or overwritten; generated thumbnails are stored separately.
@@ -50,14 +50,20 @@ corepack pnpm dev
 
 Open [http://127.0.0.1:5173](http://127.0.0.1:5173). The single `pnpm dev` command starts the Vite interface and localhost REST server together. Both services bind to `127.0.0.1` by default.
 
-## First workflow
+## Concept and refinement workflow
 
 1. Choose **New creature** and create `Dunkleosteus`.
 2. Enter a generation brief and create **Concept Round 1**.
 3. Copy the saved prompt into a normal ChatGPT conversation.
 4. Generate or obtain the concept PNGs in ChatGPT. Evolution Model Lab does not fake this step.
 5. Return to the round and import 1–10 PNGs by picker, drag-and-drop, or clipboard paste.
-6. Select one numbered parent. Reloading or restarting keeps the choice in SQLite.
+6. Compare any two candidates independently of parent selection, then select one numbered parent.
+7. Record ordered preserve/anatomy/palette/silhouette guidance, defects, requested changes, forbidden changes, and general notes.
+8. Save the feedback and create a refinement round. The selected parent, feedback snapshot, constraints, prompt, and context are frozen into the new round.
+9. Attach the parent image in ChatGPT and use the saved refinement prompt to request ten refinements.
+10. Import separate PNGs, or choose a contact-sheet layout, configure margins/gaps, inspect every calculated crop, and explicitly confirm the cells to create.
+11. Use **Prompt history** to review or copy every prior concept/refinement prompt and its feedback snapshot.
+12. Reloading or restarting preserves candidates, selection, feedback, prompts, contact-sheet provenance, and round history in SQLite.
 
 ## Commands
 
@@ -70,7 +76,7 @@ pnpm format:check     # verify formatting
 pnpm lint             # ESLint
 pnpm typecheck        # strict TypeScript checks
 pnpm test             # Vitest unit/integration tests
-pnpm test:e2e         # Playwright concept vertical slice
+pnpm test:e2e         # Playwright concept + refinement vertical slice
 pnpm build            # production compile/build check
 pnpm db:migrate       # apply committed Drizzle migrations
 pnpm db:generate      # generate a migration after an intentional schema change
@@ -95,4 +101,4 @@ When MCP is implemented, it will use the same `packages/core` application servic
 
 ## Current limitations
 
-Refinement feedback, contact-sheet splitting, design locking, evolution, references, animation, exports, MCP, and plugin skills are intentionally pending later milestones. See [docs/implementation-plan.md](docs/implementation-plan.md) for the exact status.
+Design locking/manifests, evolution, references, animation, exports, MCP, and plugin skills remain intentionally pending later milestones. Contact-sheet import supports PNG grids with explicit rows, columns, outer margins, and horizontal/vertical gaps; it does not guess irregular cell boundaries. Comparison is scoped to two candidates in the open round. See [docs/implementation-plan.md](docs/implementation-plan.md) for the exact status.

@@ -6,16 +6,62 @@ export interface ConceptPromptInput {
   candidateCount?: number;
 }
 
-export function buildConceptPrompt(input: ConceptPromptInput): string {
-  const candidateCount = input.candidateCount ?? 10;
-  const identity = input.scientificName
+export interface RefinementFeedback {
+  preserveTraits: string[];
+  anatomyToPreserve: string[];
+  paletteToPreserve: string[];
+  silhouetteToPreserve: string[];
+  defects: string[];
+  requestedChanges: string[];
+  forbiddenChanges: string[];
+  generalNotes: string;
+}
+
+export interface RefinementPromptInput {
+  displayName: string;
+  scientificName?: string | null;
+  generationBrief: string;
+  roundNumber: number;
+  parentCandidateId: string;
+  parentCandidateNumber: number;
+  feedback: RefinementFeedback;
+  constraints: {
+    camera: string;
+    facing: string;
+    canvasWidth: number;
+    canvasHeight: number;
+    transparency: boolean;
+    lighting: string;
+    style: string;
+  };
+}
+
+function identity(input: {
+  displayName: string;
+  scientificName?: string | null;
+}): string {
+  return input.scientificName
     ? `${input.displayName} (${input.scientificName})`
     : input.displayName;
+}
+
+function feedbackSection(title: string, values: readonly string[]): string[] {
+  return [
+    `### ${title}`,
+    ...(values.length > 0
+      ? values.map((value, index) => `${index + 1}. ${value}`)
+      : ["- None recorded."]),
+    "",
+  ];
+}
+
+export function buildConceptPrompt(input: ConceptPromptInput): string {
+  const candidateCount = input.candidateCount ?? 10;
 
   return [
     "# Evolution Model Lab — Concept Request",
     "",
-    `Creature: ${identity}`,
+    `Creature: ${identity(input)}`,
     `Generation round: ${input.roundNumber}`,
     "Task type: CONCEPT",
     "Workflow state: CONCEPT",
@@ -32,5 +78,53 @@ export function buildConceptPrompt(input: ConceptPromptInput): string {
     "If using separate images, do not place numbers, text, or decorative borders inside the images.",
     "",
     "After generating, save or copy the PNG files and import them into Evolution Model Lab by drag-and-drop, file picker, or clipboard paste.",
+  ].join("\n");
+}
+
+export function buildRefinementPrompt(input: RefinementPromptInput): string {
+  const transparency = input.constraints.transparency
+    ? "transparent background required"
+    : "background may be opaque";
+  return [
+    "# Evolution Model Lab — Refinement Request",
+    "",
+    `Creature: ${identity(input)}`,
+    `Generation round: ${input.roundNumber}`,
+    "Task type: REFINEMENT",
+    "Workflow state: REFINING",
+    `Parent candidate: ${input.parentCandidateNumber} (${input.parentCandidateId})`,
+    "",
+    "## Original generation brief",
+    input.generationBrief.trim(),
+    "",
+    "## Structured feedback",
+    ...feedbackSection("Preserve traits", input.feedback.preserveTraits),
+    ...feedbackSection("Anatomy to preserve", input.feedback.anatomyToPreserve),
+    ...feedbackSection("Palette to preserve", input.feedback.paletteToPreserve),
+    ...feedbackSection(
+      "Silhouette to preserve",
+      input.feedback.silhouetteToPreserve,
+    ),
+    ...feedbackSection("Defects to correct", input.feedback.defects),
+    ...feedbackSection("Requested changes", input.feedback.requestedChanges),
+    ...feedbackSection("Forbidden changes", input.feedback.forbiddenChanges),
+    "### General notes",
+    input.feedback.generalNotes || "None recorded.",
+    "",
+    "## Fixed production constraints",
+    `Camera: ${input.constraints.camera}`,
+    `Facing: ${input.constraints.facing}`,
+    `Canvas: ${input.constraints.canvasWidth} × ${input.constraints.canvasHeight} pixels`,
+    `Transparency: ${transparency}`,
+    `Lighting: ${input.constraints.lighting}`,
+    `Style: ${input.constraints.style}`,
+    "",
+    "## Required output",
+    "Use the attached parent image as the exact design parent.",
+    "Create ten distinct refinements that apply the feedback while preserving the parent’s identity.",
+    "Keep camera, facing direction, canvas, transparency, lighting, and style consistent across all ten.",
+    "Do not create an animation or animation frames.",
+    "Do not perform unrelated anatomy redesigns or introduce unrequested body structures.",
+    "Return separate PNGs or one clearly separated contact sheet with no overlaps.",
   ].join("\n");
 }

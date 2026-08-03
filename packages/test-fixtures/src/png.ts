@@ -25,20 +25,48 @@ export function createSolidPng(
   height: number,
   rgba: readonly [number, number, number, number],
 ): Buffer {
+  return createPng(width, height, () => rgba);
+}
+
+function createPng(
+  width: number,
+  height: number,
+  pixel: (x: number, y: number) => readonly [number, number, number, number],
+): Buffer {
   const header = Buffer.alloc(13);
   header.writeUInt32BE(width, 0);
   header.writeUInt32BE(height, 4);
   header[8] = 8;
   header[9] = 6;
-  const scanline = Buffer.from([
-    0,
-    ...Array.from({ length: width }, () => rgba).flat(),
-  ]);
-  const pixels = Buffer.concat(Array.from({ length: height }, () => scanline));
+  const pixels = Buffer.concat(
+    Array.from({ length: height }, (_, y) =>
+      Buffer.from([
+        0,
+        ...Array.from({ length: width }, (_, x) => pixel(x, y)).flat(),
+      ]),
+    ),
+  );
   return Buffer.concat([
     Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]),
     chunk("IHDR", header),
     chunk("IDAT", deflateSync(pixels)),
     chunk("IEND", Buffer.alloc(0)),
   ]);
+}
+
+export function createGridPng(
+  width: number,
+  height: number,
+  rows: number,
+  columns: number,
+  colours: ReadonlyArray<readonly [number, number, number, number]>,
+): Buffer {
+  if (colours.length < rows * columns) {
+    throw new Error("Provide one RGBA colour for every grid cell.");
+  }
+  return createPng(width, height, (x, y) => {
+    const column = Math.min(columns - 1, Math.floor((x * columns) / width));
+    const row = Math.min(rows - 1, Math.floor((y * rows) / height));
+    return colours[row * columns + column]!;
+  });
 }

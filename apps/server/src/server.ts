@@ -5,7 +5,10 @@ import { ZodError } from "zod";
 
 import { isAppError, type EvolutionModelLabService } from "@eml/core";
 import {
+  candidateFeedbackInputSchema,
   candidateSourceSchema,
+  confirmContactSheetInputSchema,
+  contactSheetLayoutSchema,
   createCreatureInputSchema,
   selectCandidateInputSchema,
   uuidParameterSchema,
@@ -30,14 +33,14 @@ export function createApp(service: EvolutionModelLabService): express.Express {
   );
   const upload = multer({
     storage: multer.memoryStorage(),
-    limits: { fileSize: maximumUploadBytes, files: 10, fields: 4 },
+    limits: { fileSize: maximumUploadBytes, files: 10, fields: 12 },
   });
 
   app.disable("x-powered-by");
   app.use(express.json({ limit: "1mb" }));
 
   app.get("/api/health", (_request, response) => {
-    response.json({ ok: true, service: "Evolution Model Lab", milestone: 1 });
+    response.json({ ok: true, service: "Evolution Model Lab", milestone: 2 });
   });
 
   app.get("/api/dashboard", (_request, response) => {
@@ -70,6 +73,20 @@ export function createApp(service: EvolutionModelLabService): express.Express {
       response.status(201).json({ data: round });
     }),
   );
+
+  app.post(
+    "/api/creatures/:creatureId/rounds/refinement",
+    asyncRoute(async (request, response) => {
+      const creatureId = uuidParameterSchema.parse(request.params.creatureId);
+      const round = await service.createRefinementRound(creatureId);
+      response.status(201).json({ data: round });
+    }),
+  );
+
+  app.get("/api/creatures/:creatureId/prompts", (request, response) => {
+    const creatureId = uuidParameterSchema.parse(request.params.creatureId);
+    response.json({ data: service.getPromptHistory(creatureId) });
+  });
 
   app.get("/api/rounds/:roundId", (request, response) => {
     const roundId = uuidParameterSchema.parse(request.params.roundId);
@@ -110,6 +127,78 @@ export function createApp(service: EvolutionModelLabService): express.Express {
       data: service.selectCandidate(parsed.roundId, parsed.candidateId),
     });
   });
+
+  app.patch("/api/candidates/:candidateId/feedback", (request, response) => {
+    const candidateId = uuidParameterSchema.parse(request.params.candidateId);
+    const feedback = candidateFeedbackInputSchema.parse(request.body);
+    response.json({
+      data: service.saveCandidateFeedback(candidateId, feedback),
+    });
+  });
+
+  app.post(
+    "/api/creatures/:creatureId/rounds/:roundId/contact-sheets/preview",
+    upload.single("image"),
+    asyncRoute(async (request, response) => {
+      const creatureId = uuidParameterSchema.parse(request.params.creatureId);
+      const roundId = uuidParameterSchema.parse(request.params.roundId);
+      const layout = contactSheetLayoutSchema.parse(request.body);
+      if (!request.file) {
+        response.status(400).json({
+          error: {
+            code: "CONTACT_SHEET_REQUIRED",
+            message: "Choose one contact-sheet PNG to preview.",
+          },
+        });
+        return;
+      }
+      const preview = await service.previewContactSheet({
+        creatureId,
+        roundId,
+        layout,
+        file: {
+          buffer: request.file.buffer,
+          originalFilename: request.file.originalname,
+        },
+      });
+      response.status(201).json({ data: preview });
+    }),
+  );
+
+  app.post(
+    "/api/contact-sheets/:contactSheetId/confirm",
+    asyncRoute(async (request, response) => {
+      const contactSheetId = uuidParameterSchema.parse(
+        request.params.contactSheetId,
+      );
+      const parsed = confirmContactSheetInputSchema.parse(request.body);
+      response.status(201).json({
+        data: await service.confirmContactSheet(
+          contactSheetId,
+          parsed.selectedCropIndexes,
+        ),
+      });
+    }),
+  );
+
+  app.get(
+    "/api/contact-sheets/:contactSheetId/image",
+    (request, response, next) => {
+      try {
+        const contactSheetId = uuidParameterSchema.parse(
+          request.params.contactSheetId,
+        );
+        const media = service.getContactSheetMedia(contactSheetId);
+        response.type(media.mimeType);
+        response.setHeader("Cache-Control", "private, max-age=3600");
+        response.sendFile(media.path, (error) => {
+          if (error) next(error);
+        });
+      } catch (error) {
+        next(error);
+      }
+    },
+  );
 
   app.get("/api/candidates/:candidateId/:kind", (request, response, next) => {
     try {

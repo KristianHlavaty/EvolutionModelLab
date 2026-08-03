@@ -47,6 +47,7 @@ export const generationRounds = sqliteTable(
     defectsToCorrect: text("defects_to_correct"),
     requestedChanges: text("requested_changes"),
     forbiddenChanges: text("forbidden_changes"),
+    feedbackSnapshot: text("feedback_snapshot"),
     createdAt: text("created_at").notNull(),
     deletedAt: text("deleted_at"),
   },
@@ -79,6 +80,11 @@ export const candidates = sqliteTable(
     rating: integer("rating"),
     rejected: integer("rejected", { mode: "boolean" }).notNull().default(false),
     selected: integer("selected", { mode: "boolean" }).notNull().default(false),
+    contactSheetImportId: text("contact_sheet_import_id"),
+    cropX: integer("crop_x"),
+    cropY: integer("crop_y"),
+    cropWidth: integer("crop_width"),
+    cropHeight: integer("crop_height"),
     createdAt: text("created_at").notNull(),
     deletedAt: text("deleted_at"),
   },
@@ -92,6 +98,40 @@ export const candidates = sqliteTable(
     uniqueIndex("candidates_one_selected_per_round")
       .on(table.generationRoundId)
       .where(sql`${table.selected} = 1 AND ${table.deletedAt} IS NULL`),
+  ],
+);
+
+export const contactSheetImports = sqliteTable(
+  "contact_sheet_imports",
+  {
+    id: text("id").primaryKey(),
+    generationRoundId: text("generation_round_id")
+      .notNull()
+      .references(() => generationRounds.id, { onDelete: "restrict" }),
+    originalPath: text("original_path").notNull(),
+    originalFilename: text("original_filename").notNull(),
+    width: integer("width").notNull(),
+    height: integer("height").notNull(),
+    fileHash: text("file_hash").notNull(),
+    rows: integer("rows").notNull(),
+    columns: integer("columns").notNull(),
+    marginTop: integer("margin_top").notNull(),
+    marginRight: integer("margin_right").notNull(),
+    marginBottom: integer("margin_bottom").notNull(),
+    marginLeft: integer("margin_left").notNull(),
+    horizontalGap: integer("horizontal_gap").notNull(),
+    verticalGap: integer("vertical_gap").notNull(),
+    cropRectangles: text("crop_rectangles").notNull(),
+    status: text("status").notNull().default("PREVIEW"),
+    createdAt: text("created_at").notNull(),
+    confirmedAt: text("confirmed_at"),
+  },
+  (table) => [
+    index("contact_sheet_imports_round_idx").on(table.generationRoundId),
+    uniqueIndex("contact_sheet_imports_round_hash_unique").on(
+      table.generationRoundId,
+      table.fileHash,
+    ),
   ],
 );
 
