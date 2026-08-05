@@ -6,11 +6,16 @@ import { ZodError } from "zod";
 import { isAppError, type EvolutionModelLabService } from "@eml/core";
 import {
   candidateFeedbackInputSchema,
+  candidateRejectionInputSchema,
   candidateSourceSchema,
   confirmContactSheetInputSchema,
   contactSheetLayoutSchema,
   createCreatureInputSchema,
+  designManifestInputSchema,
+  destructiveActionInputSchema,
+  lockDesignInputSchema,
   selectCandidateInputSchema,
+  unlockDesignInputSchema,
   uuidParameterSchema,
 } from "@eml/shared";
 
@@ -40,7 +45,7 @@ export function createApp(service: EvolutionModelLabService): express.Express {
   app.use(express.json({ limit: "1mb" }));
 
   app.get("/api/health", (_request, response) => {
-    response.json({ ok: true, service: "Evolution Model Lab", milestone: 2 });
+    response.json({ ok: true, service: "Evolution Model Lab", milestone: 3 });
   });
 
   app.get("/api/dashboard", (_request, response) => {
@@ -88,6 +93,62 @@ export function createApp(service: EvolutionModelLabService): express.Express {
     response.json({ data: service.getPromptHistory(creatureId) });
   });
 
+  app.get(
+    "/api/creatures/:creatureId/manifest",
+    asyncRoute(async (request, response) => {
+      const creatureId = uuidParameterSchema.parse(request.params.creatureId);
+      response.json({ data: await service.getDesignManifest(creatureId) });
+    }),
+  );
+
+  app.patch(
+    "/api/creatures/:creatureId/manifest",
+    asyncRoute(async (request, response) => {
+      const creatureId = uuidParameterSchema.parse(request.params.creatureId);
+      const input = designManifestInputSchema.parse(request.body);
+      response.json({
+        data: await service.saveDesignManifest(creatureId, input),
+      });
+    }),
+  );
+
+  app.post(
+    "/api/creatures/:creatureId/design-lock",
+    asyncRoute(async (request, response) => {
+      const creatureId = uuidParameterSchema.parse(request.params.creatureId);
+      const input = lockDesignInputSchema.parse(request.body);
+      response.json({ data: await service.lockDesign(creatureId, input) });
+    }),
+  );
+
+  app.post("/api/creatures/:creatureId/design-unlock", (request, response) => {
+    const creatureId = uuidParameterSchema.parse(request.params.creatureId);
+    const input = unlockDesignInputSchema.parse(request.body);
+    response.json({ data: service.unlockDesign(creatureId, input) });
+  });
+
+  app.get("/api/creatures/:creatureId/history", (request, response) => {
+    const creatureId = uuidParameterSchema.parse(request.params.creatureId);
+    response.json({ data: service.getDesignHistory(creatureId) });
+  });
+
+  app.get(
+    "/api/creatures/:creatureId/locked-design",
+    (request, response, next) => {
+      try {
+        const creatureId = uuidParameterSchema.parse(request.params.creatureId);
+        const media = service.getLockedDesignMedia(creatureId);
+        response.type(media.mimeType);
+        response.setHeader("Cache-Control", "no-store");
+        response.sendFile(media.path, { dotfiles: "allow" }, (error) => {
+          if (error) next(error);
+        });
+      } catch (error) {
+        next(error);
+      }
+    },
+  );
+
   app.get("/api/rounds/:roundId", (request, response) => {
     const roundId = uuidParameterSchema.parse(request.params.roundId);
     response.json({ data: service.getRound(roundId) });
@@ -134,6 +195,27 @@ export function createApp(service: EvolutionModelLabService): express.Express {
     response.json({
       data: service.saveCandidateFeedback(candidateId, feedback),
     });
+  });
+
+  app.patch("/api/candidates/:candidateId/rejection", (request, response) => {
+    const candidateId = uuidParameterSchema.parse(request.params.candidateId);
+    const input = candidateRejectionInputSchema.parse(request.body);
+    service.setCandidateRejected(candidateId, input.rejected);
+    response.json({ data: { candidateId, rejected: input.rejected } });
+  });
+
+  app.delete("/api/candidates/:candidateId", (request, response) => {
+    const candidateId = uuidParameterSchema.parse(request.params.candidateId);
+    const input = destructiveActionInputSchema.parse(request.body ?? {});
+    service.deleteCandidate(candidateId, input.confirmed);
+    response.json({ data: { candidateId, deleted: true } });
+  });
+
+  app.delete("/api/rounds/:roundId", (request, response) => {
+    const roundId = uuidParameterSchema.parse(request.params.roundId);
+    const input = destructiveActionInputSchema.parse(request.body ?? {});
+    service.deleteRound(roundId, input.confirmed);
+    response.json({ data: { roundId, deleted: true } });
   });
 
   app.post(
@@ -191,7 +273,7 @@ export function createApp(service: EvolutionModelLabService): express.Express {
         const media = service.getContactSheetMedia(contactSheetId);
         response.type(media.mimeType);
         response.setHeader("Cache-Control", "private, max-age=3600");
-        response.sendFile(media.path, (error) => {
+        response.sendFile(media.path, { dotfiles: "allow" }, (error) => {
           if (error) next(error);
         });
       } catch (error) {
@@ -213,7 +295,7 @@ export function createApp(service: EvolutionModelLabService): express.Express {
       const media = service.getCandidateMedia(candidateId, kind);
       response.type(media.mimeType);
       response.setHeader("Cache-Control", "private, max-age=3600");
-      response.sendFile(media.path, (error) => {
+      response.sendFile(media.path, { dotfiles: "allow" }, (error) => {
         if (error) next(error);
       });
     } catch (error) {

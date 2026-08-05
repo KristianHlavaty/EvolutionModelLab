@@ -40,6 +40,11 @@ import {
 } from "react-router-dom";
 
 import { api, jsonRequest } from "./api.ts";
+import {
+  CreatureDesignPanel,
+  DesignHistoryPage,
+  ManifestPage,
+} from "./MilestoneThree.tsx";
 import { PromptHistoryPage, RoundWorkspacePage } from "./MilestoneTwo.tsx";
 import type { Candidate, Creature, DashboardData, Round } from "./types.ts";
 
@@ -87,7 +92,6 @@ function AppShell({ children }: { children: ReactNode }) {
   const primary = [
     { to: "/", label: "Overview", icon: LayoutDashboard },
     { to: "/creatures", label: "Creatures", icon: Dna },
-    { to: "/history", label: "History", icon: History },
   ];
   return (
     <div className="app-shell">
@@ -587,10 +591,13 @@ function CreatureDetailPage() {
       <div className="detail-grid">
         <section className="panel specimen-panel">
           <div className="specimen-stage checkerboard">
-            {creature.selectedCandidate ? (
+            {(creature.lockedCandidate ?? creature.selectedCandidate) ? (
               <img
-                src={creature.selectedCandidate.imageUrl}
-                alt={`Selected ${creature.displayName} candidate`}
+                src={
+                  creature.lockedCandidate?.imageUrl ??
+                  creature.selectedCandidate!.imageUrl
+                }
+                alt={`${creature.lockedCandidate ? "Locked" : "Selected"} ${creature.displayName} candidate`}
               />
             ) : (
               <div className="empty-specimen">
@@ -600,11 +607,15 @@ function CreatureDetailPage() {
               </div>
             )}
           </div>
-          {creature.selectedCandidate && (
+          {(creature.lockedCandidate ?? creature.selectedCandidate) && (
             <div className="selected-caption">
               <span>
-                <Check size={15} /> Selected candidate{" "}
-                {creature.selectedCandidate.candidateNumber}
+                <Check size={15} />{" "}
+                {creature.lockedCandidate ? "Locked" : "Selected"} candidate{" "}
+                {
+                  (creature.lockedCandidate ?? creature.selectedCandidate)!
+                    .candidateNumber
+                }
               </span>
               <Link
                 to={`/creatures/${creature.id}/rounds/${creature.currentRoundId}`}
@@ -639,18 +650,22 @@ function CreatureDetailPage() {
           ) : creature.currentRound ? (
             <>
               <h2>
-                {creature.status === "CONCEPT"
-                  ? "Import concept images"
-                  : creature.status === "REFINING"
-                    ? "Import refinement images"
-                    : "Selection saved"}
+                {creature.status === "DESIGN_LOCKED"
+                  ? "Authoritative design secured"
+                  : creature.status === "CONCEPT"
+                    ? "Import concept images"
+                    : creature.status === "REFINING"
+                      ? "Import refinement images"
+                      : "Selection saved"}
               </h2>
               <p>
-                {creature.status === "CONCEPT"
-                  ? "Add one to ten PNG results and review the numbered gallery."
-                  : creature.status === "REFINING"
-                    ? "Import refinements, compare them, and select the next parent."
-                    : "Record structured feedback and create the next refinement round."}
+                {creature.status === "DESIGN_LOCKED"
+                  ? "The locked image and frozen manifest are protected. Unlock explicitly before replacing the design."
+                  : creature.status === "CONCEPT"
+                    ? "Add one to ten PNG results and review the numbered gallery."
+                    : creature.status === "REFINING"
+                      ? "Import refinements, compare them, and select the next parent."
+                      : "Record structured feedback and create the next refinement round."}
               </p>
               <Link
                 className="button primary full"
@@ -668,6 +683,7 @@ function CreatureDetailPage() {
           </div>
         </aside>
       </div>
+      <CreatureDesignPanel creature={creature} onChanged={reload} />
       <section className="panel project-brief">
         <div className="panel-heading">
           <div>
@@ -952,7 +968,7 @@ function CandidateCard({
 }) {
   return (
     <article
-      className={`candidate-card ${candidate.selected ? "selected" : ""}`}
+      className={`candidate-card ${candidate.selected ? "selected" : ""} ${candidate.locked ? "locked" : ""}`}
       data-testid={`candidate-${candidate.candidateNumber}`}
     >
       <div className="candidate-image checkerboard">
@@ -973,6 +989,11 @@ function CandidateCard({
         {candidate.selected && (
           <span className="selected-flag">
             <Check size={14} /> Selected
+          </span>
+        )}
+        {candidate.locked && (
+          <span className="locked-flag">
+            <ShieldCheck size={14} /> Locked design
           </span>
         )}
       </div>
@@ -1058,12 +1079,11 @@ export function App() {
         />
         <Route
           path="/creatures/:creatureId/manifest"
-          element={
-            <FutureFeaturePage
-              title="Design manifest"
-              milestone="Milestone 3"
-            />
-          }
+          element={<ManifestPage />}
+        />
+        <Route
+          path="/creatures/:creatureId/history"
+          element={<DesignHistoryPage />}
         />
         <Route
           path="/creatures/:creatureId/references"
@@ -1104,15 +1124,6 @@ export function App() {
             <FutureFeaturePage
               title="Project settings"
               milestone="Milestone 5"
-            />
-          }
-        />
-        <Route
-          path="/history"
-          element={
-            <FutureFeaturePage
-              title="Complete history browser"
-              milestone="Milestone 3"
             />
           }
         />

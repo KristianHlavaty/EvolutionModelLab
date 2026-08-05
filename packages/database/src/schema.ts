@@ -169,9 +169,117 @@ export const historyEvents = sqliteTable(
     entityId: text("entity_id").notNull(),
     action: text("action").notNull(),
     payload: text("payload").notNull(),
+    candidateId: text("candidate_id"),
+    generationRoundId: text("generation_round_id"),
+    manifestVersion: integer("manifest_version"),
+    actor: text("actor"),
     createdAt: text("created_at").notNull(),
   },
   (table) => [index("history_events_created_idx").on(table.createdAt)],
+);
+
+export const designManifests = sqliteTable(
+  "design_manifests",
+  {
+    id: text("id").primaryKey(),
+    creatureProjectId: text("creature_project_id")
+      .notNull()
+      .references(() => creatureProjects.id, { onDelete: "restrict" }),
+    version: integer("version").notNull().default(0),
+    immutableFeatures: text("immutable_features").notNull().default("[]"),
+    preferredFeatures: text("preferred_features").notNull().default("[]"),
+    forbiddenFeatures: text("forbidden_features").notNull().default("[]"),
+    anatomyNotes: text("anatomy_notes").notNull().default(""),
+    biologicalNotes: text("biological_notes").notNull().default(""),
+    styleNotes: text("style_notes").notNull().default(""),
+    paletteNotes: text("palette_notes").notNull().default(""),
+    textureNotes: text("texture_notes").notNull().default(""),
+    cameraNotes: text("camera_notes").notNull().default(""),
+    lightingNotes: text("lighting_notes").notNull().default(""),
+    animationNotes: text("animation_notes").notNull().default(""),
+    canvasWidth: integer("canvas_width").notNull().default(1024),
+    canvasHeight: integer("canvas_height").notNull().default(1024),
+    facing: text("facing").notNull().default("right"),
+    anchorX: integer("anchor_x").notNull().default(512),
+    anchorY: integer("anchor_y").notNull().default(1023),
+    transparentBackgroundRequired: integer("transparent_background_required", {
+      mode: "boolean",
+    })
+      .notNull()
+      .default(true),
+    explicitFields: text("explicit_fields").notNull().default("[]"),
+    createdAt: text("created_at").notNull(),
+    updatedAt: text("updated_at").notNull(),
+  },
+  (table) => [
+    uniqueIndex("design_manifests_creature_unique").on(table.creatureProjectId),
+  ],
+);
+
+export const designManifestVersions = sqliteTable(
+  "design_manifest_versions",
+  {
+    id: text("id").primaryKey(),
+    designManifestId: text("design_manifest_id")
+      .notNull()
+      .references(() => designManifests.id, { onDelete: "restrict" }),
+    creatureProjectId: text("creature_project_id")
+      .notNull()
+      .references(() => creatureProjects.id, { onDelete: "restrict" }),
+    version: integer("version").notNull(),
+    snapshot: text("snapshot").notNull(),
+    snapshotPath: text("snapshot_path").notNull(),
+    reason: text("reason").notNull(),
+    actor: text("actor"),
+    createdAt: text("created_at").notNull(),
+  },
+  (table) => [
+    uniqueIndex("design_manifest_versions_manifest_version_unique").on(
+      table.designManifestId,
+      table.version,
+    ),
+    uniqueIndex("design_manifest_versions_snapshot_path_unique").on(
+      table.snapshotPath,
+    ),
+  ],
+);
+
+export const designLocks = sqliteTable(
+  "design_locks",
+  {
+    id: text("id").primaryKey(),
+    creatureProjectId: text("creature_project_id")
+      .notNull()
+      .references(() => creatureProjects.id, { onDelete: "restrict" }),
+    lockNumber: integer("lock_number").notNull(),
+    candidateId: text("candidate_id")
+      .notNull()
+      .references(() => candidates.id, { onDelete: "restrict" }),
+    generationRoundId: text("generation_round_id")
+      .notNull()
+      .references(() => generationRounds.id, { onDelete: "restrict" }),
+    manifestVersionId: text("manifest_version_id")
+      .notNull()
+      .references(() => designManifestVersions.id, { onDelete: "restrict" }),
+    manifestVersion: integer("manifest_version").notNull(),
+    status: text("status").notNull().default("ACTIVE"),
+    activeReferencePath: text("active_reference_path").notNull(),
+    archivedReferencePath: text("archived_reference_path"),
+    sourceFileHash: text("source_file_hash").notNull(),
+    actor: text("actor"),
+    lockedAt: text("locked_at").notNull(),
+    unlockedAt: text("unlocked_at"),
+  },
+  (table) => [
+    uniqueIndex("design_locks_creature_number_unique").on(
+      table.creatureProjectId,
+      table.lockNumber,
+    ),
+    uniqueIndex("design_locks_one_active_per_creature")
+      .on(table.creatureProjectId)
+      .where(sql`${table.status} = 'ACTIVE'`),
+    index("design_locks_candidate_idx").on(table.candidateId),
+  ],
 );
 
 export const projectSettings = sqliteTable("project_settings", {

@@ -25,6 +25,7 @@ export interface Candidate {
   source: string;
   rejected: boolean;
   selected: boolean;
+  locked: boolean;
   thumbnailUrl: string;
   imageUrl: string;
   createdAt: string;
@@ -102,9 +103,11 @@ export interface Creature {
   generationBrief: string;
   status: string;
   currentRoundId: string | null;
+  lockedCandidateId: string | null;
   createdAt: string;
   updatedAt: string;
   selectedCandidate: Candidate | null;
+  lockedCandidate: Candidate | null;
   roundCount: number;
   rounds?: Array<{
     id: string;
@@ -114,6 +117,86 @@ export interface Creature {
     candidateCount: number;
   }>;
   currentRound?: Round | null;
+  manifest?: DesignManifest | null;
+  activeLock?: DesignLock | null;
+  lockHistory?: DesignLock[];
+}
+
+export type DesignManifestField =
+  | "immutableFeatures"
+  | "preferredFeatures"
+  | "forbiddenFeatures"
+  | "anatomyNotes"
+  | "biologicalNotes"
+  | "styleNotes"
+  | "paletteNotes"
+  | "textureNotes"
+  | "cameraNotes"
+  | "lightingNotes"
+  | "animationNotes"
+  | "canvasWidth"
+  | "canvasHeight"
+  | "facing"
+  | "anchorX"
+  | "anchorY"
+  | "transparentBackgroundRequired";
+
+export interface DesignManifest {
+  id: string;
+  creatureProjectId: string;
+  version: number;
+  immutableFeatures: string[];
+  preferredFeatures: string[];
+  forbiddenFeatures: string[];
+  anatomyNotes: string;
+  biologicalNotes: string;
+  styleNotes: string;
+  paletteNotes: string;
+  textureNotes: string;
+  cameraNotes: string;
+  lightingNotes: string;
+  animationNotes: string;
+  canvasWidth: number;
+  canvasHeight: number;
+  facing: "left" | "right" | "front" | "back";
+  anchorX: number;
+  anchorY: number;
+  transparentBackgroundRequired: boolean;
+  explicitFields: DesignManifestField[];
+  createdAt: string;
+  updatedAt: string;
+  lockedSnapshotVersion: number | null;
+  lockedMismatchWarningRequired: boolean;
+}
+
+export interface DesignLock {
+  id: string;
+  creatureProjectId: string;
+  lockNumber: number;
+  candidateId: string;
+  candidateNumber: number;
+  candidateImageUrl: string;
+  generationRoundId: string;
+  roundNumber: number;
+  manifestVersion: number;
+  status: string;
+  activeReferencePath: string;
+  archivedReferencePath: string | null;
+  lockedAt: string;
+  unlockedAt: string | null;
+  actor: string | null;
+}
+
+export interface DesignHistoryEvent {
+  id: string;
+  timestamp: string;
+  action: string;
+  creature: { id: string; displayName: string };
+  candidate: { id: string; candidateNumber: number } | null;
+  round: { id: string; roundNumber: number } | null;
+  manifestVersion: number | null;
+  actor: string | null;
+  details: Record<string, unknown>;
 }
 
 export interface DashboardData {

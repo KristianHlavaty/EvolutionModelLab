@@ -1,6 +1,6 @@
 import { resolve } from "node:path";
 
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixture.js";
 
 test("completes the concept and refinement workflow with feedback, comparison, and contact-sheet crops", async ({
   page,

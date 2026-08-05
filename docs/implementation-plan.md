@@ -3,7 +3,7 @@
 ## Repository
 
 - Resolved repository root: `C:\Users\krist\Desktop\coding\EvolutionModelLab`
-- Verified on: 2026-08-03
+- Verified on: 2026-08-05
 - The repository is initialized directly at the workspace root.
 - No nested `EvolutionModelLab` directory is used.
 - Runtime data remains under `data/`, `workspace/`, and `exports/` in this repository.
@@ -12,14 +12,14 @@
 
 Evolution Model Lab is a local-first creature design workspace. ChatGPT supplies images through ordinary conversations; this application persists project state, builds prompts, imports and validates user-provided images, and maintains recoverable history. It does not call paid image-generation APIs and never pretends to generate images.
 
-This pass implements **Milestone 2 only**, building on the completed Milestone 1 concept slice. Later workflow surfaces may remain visible as clearly disabled navigation, but their actions are not represented as working.
+This pass implements **Milestone 3 only**, building on the completed Milestone 2 refinement workflow. Later workflow surfaces may remain visible as clearly disabled navigation, but their actions are not represented as working.
 
 ## Module boundaries
 
-- `apps/web`: React/Vite interface, routing, uploads, numbered gallery, feedback editor, comparison workspace, prompt history, and contact-sheet preview/confirmation.
-- `apps/server`: localhost Express transport, request parsing, error mapping, and media responses.
+- `apps/web`: React/Vite interface, routing, uploads, numbered gallery, feedback/manifest editors, comparison workspace, lock/unlock confirmations, lock/history presentation, prompt history, and contact-sheet preview/confirmation.
+- `apps/server`: localhost Express transport, request parsing, error mapping, and exact guarded media responses.
 - `apps/mcp-server`: reserved application boundary for the later Streamable HTTP MCP server; no MCP SDK is installed through Milestone 2.
-- `packages/core`: reusable workflow/application services used by future REST and MCP adapters.
+- `packages/core`: reusable workflow/application services, including manifest versioning and design-lock rules, used by future REST and MCP adapters.
 - `packages/database`: SQLite connection, Drizzle schema, migrations, and database lifecycle.
 - `packages/shared`: Zod request/response contracts and shared domain constants.
 - `packages/image-processing`: PNG inspection, SHA-256 hashing, deterministic grid geometry, derived crop creation, and thumbnails.
@@ -52,6 +52,17 @@ The schema includes a partial unique index enforcing one active selected candida
 
 An upgrade regression test constructs a database from the committed Milestone 1 migration, inserts a selected project, applies Milestone 2 on reopen, and then saves feedback and creates a refinement round without data loss.
 
+## Milestone 3 additive schema
+
+`0002_milestone_three.sql` preserves earlier rows while adding:
+
+- `design_manifests`, which stores the current editable draft, ordered constraint lists, approved notes, production frame, and the set of fields explicitly approved by the project owner;
+- `design_manifest_versions`, which records immutable version data and guarded snapshot paths;
+- `design_locks`, which records candidate/round/manifest ownership, active or superseded state, reference/archive paths, hashes, and timestamps;
+- candidate, round, manifest-version, and actor fields on append-only history events.
+
+Existing projects receive a version-zero draft derived from their project settings. Those inherited values remain marked as project defaults until explicitly edited. The first successful lock freezes version 1; later confirmed edits and relocks advance monotonically and never overwrite a frozen row or numbered file.
+
 ## Filesystem ownership and safety
 
 - Original uploads are written once under `workspace/creatures/<slug>/rounds/<round>/candidates/` with generated UUID filenames.
@@ -60,7 +71,9 @@ An upgrade regression test constructs a database from the committed Milestone 1 
 - Every application path is resolved and checked against an allowed root before access.
 - SHA-256 is calculated from the original bytes before persistence.
 - A failed import removes only files staged by that failed operation; existing originals are never overwritten.
-- SQLite is authoritative for application state; creature `manifest.json`, `prompt.txt`, and `generation-context.json` are durable filesystem artifacts.
+- SQLite is authoritative for application state; creature `manifest.json`, immutable numbered manifest snapshots, locked-reference copies/archives, `prompt.txt`, and `generation-context.json` are durable filesystem artifacts.
+- Design locking rereads and decodes the guarded source PNG, compares its exact SHA-256 with the persisted hash, and copies bytes without modifying the original.
+- Lock destinations use exclusive creation. A failed filesystem/database operation cleans up only files staged by that attempt and never overwrites an existing reference, archive, history snapshot, or candidate original.
 
 ## Technical risks
 
@@ -92,7 +105,7 @@ An upgrade regression test constructs a database from the committed Milestone 1 
 | --------- | ---------------------------------------------------- | --------- |
 | 1         | Repository and persisted concept vertical slice      | Completed |
 | 2         | Feedback, refinement, prompt history, contact sheets | Completed |
-| 3         | Design lock, manifest, history expansion             | Pending   |
+| 3         | Design lock, manifest, history expansion             | Completed |
 | 4         | Evolution lineage and mutations                      | Pending   |
 | 5         | Canonical references and approval gates              | Pending   |
 | 6         | Animation Lab and repair workflow                    | Pending   |
@@ -147,9 +160,48 @@ Final verification on 2026-08-03:
 
 The manual workflow created a fresh creature in `.tmp/manual`, saved ordered feedback for Candidate 2, created Refinement Round 2, verified the frozen prompt, inspected side-by-side comparison, previewed and confirmed two explicit contact-sheet rectangles, verified crop provenance/candidate numbering, opened both prompt-history entries, and found no browser console warnings or errors. The isolated manual development server was stopped afterward.
 
+## Milestone 3 acceptance criteria
+
+- [x] Every creature has a persisted editable Design Manifest with ordered immutable, preferred, and forbidden lists; approved note fields; canvas dimensions; facing; anchors; and transparency.
+- [x] The editor distinguishes project defaults from explicit owner-approved fields and does not invent anatomy or biology.
+- [x] Meaningful post-lock edits require confirmation and create a new immutable version while preserving every previous row and `history/manifests/manifest-vNNN.json` snapshot.
+- [x] Locking requires explicit consequence acknowledgement and exactly one valid, selected candidate in the current round belonging to the same creature.
+- [x] Locking revalidates the guarded source path, PNG content, and SHA-256; copies the original unchanged; freezes the manifest; sets `DESIGN_LOCKED`; and records complete ownership/history.
+- [x] The active locked candidate cannot be rejected or deleted, its source round cannot be deleted, and later imports cannot silently replace it.
+- [x] Unlocking requires explicit acknowledgement, preserves all lock assets/history, clears the active locked candidate, and returns the creature to `REFINING`.
+- [x] Relocking archives the former active copy to the next exclusive `history/locked-designs/locked-design-vNNN.png` path before activating the new selected candidate.
+- [x] The creature page, manifest route, custom lock/unlock confirmations, prominent lock marker/reference, and creature-specific immutable history are implemented without enabling Milestone 4 or later actions.
+- [x] Unit/integration and Playwright tests cover success, invalid ownership/state, protected dependencies, restart persistence, unchanged bytes, immutable versions, unlock/relock, archive creation, and filesystem collision rollback.
+
+## Milestone 3 test status
+
+Final verification on 2026-08-05:
+
+| Command                          | Result                                                                                                             |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `corepack pnpm format`           | Passed; final source and documentation formatted                                                                   |
+| `corepack pnpm format:check`     | Passed; every matched file uses Prettier style                                                                     |
+| `corepack pnpm lint`             | Passed; 0 ESLint errors                                                                                            |
+| `corepack pnpm typecheck`        | Passed; packages, server, and web compile in strict mode                                                           |
+| `corepack pnpm test`             | Passed; 5 files and 22 Vitest unit/integration tests                                                               |
+| `corepack pnpm test:e2e`         | Passed; 2 Playwright workflows in 8.2 seconds                                                                      |
+| `corepack pnpm build`            | Passed; packages/server compiled and Vite transformed 1,676 modules                                                |
+| Manual primary workflow exercise | Passed; locked preview, manifest, confirmation, unlock/relock history, persistence, and 0 browser console warnings |
+
+The design integration suite verifies draft persistence across service restart, ordered constraints and explicit/default provenance, invalid manifests, missing/current/cross-creature/rejected/deleted candidate gates, byte-identical active copies, immutable frozen snapshots, protected reject/delete/round operations, stable locks across imports, confirmed post-lock edits, unlock/relock/archive history, destination collisions, rollback cleanup, and non-overwrite behavior.
+
+The Milestone 3 Playwright workflow creates concept and refinement rounds, edits and reorders manifest constraints, saves production fields, reviews the lock summary, confirms the first lock, reads the locked PNG endpoint and compares exact fixture bytes, verifies restart persistence and the locked marker, exercises protected REST operations, confirms unlock, selects a replacement, relocks, and verifies the archived first reference. The E2E services run as a Playwright worker fixture so Express and Vite are closed through direct handles on Windows.
+
+Manual in-app browser QA reviewed the resulting `DESIGN_LOCKED` creature, opened and cancelled the explicit unlock confirmation, verified persisted manifest order/provenance/production values, reviewed active and superseded lock history plus manifest freeze/archive events, and confirmed the locked preview decoded at its real 80×52 dimensions with no console warnings or errors. This pass exposed Express's default refusal to serve test media beneath a dot-prefixed directory; exact paths already guarded by core are now sent with `dotfiles: "allow"`, and the automated byte assertion covers the regression. The isolated manual-QA services were stopped afterward.
+
 ## Known limitations
 
-- Design locking/manifests, evolution, references, animation, export, MCP, and plugin skills remain deferred to their planned milestones.
+- Evolution, canonical references, animation, export, MCP, and plugin skills remain deferred to their planned milestones. The Milestone 3 locked PNG is an authoritative design copy, not a Milestone 5 canonical reference set.
+- Local history actor values are `LOCAL_USER` and `SYSTEM`; authentication and named-user attribution are not implemented.
+- The editable manifest begins at version 0. Frozen, immutable versions begin at `manifest-v001.json` on the first design lock.
+- Unlock preserves the last active reference file for audit/relock safety; it is archived only when a later lock installs a replacement.
+- Reject/delete protection is enforced and integration/E2E tested through core and REST. General destructive candidate/round controls are not surfaced as routine UI actions.
+- History is scoped to the open creature; there is no cross-creature history dashboard.
 - Only PNG candidate and contact-sheet imports are accepted.
 - Contact-sheet geometry is explicit and rectangular; automatic/irregular cell detection is not implemented.
 - Candidate comparison is scoped to two candidates in the open round and its view controls are not persisted.

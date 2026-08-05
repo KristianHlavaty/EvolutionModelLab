@@ -6,6 +6,7 @@ import {
   ImagePlus,
   Layers,
   Save,
+  ShieldCheck,
   Sparkles,
   UploadCloud,
 } from "lucide-react";
@@ -942,7 +943,7 @@ export function RoundWorkspacePage() {
           <div className="candidate-grid">
             {round.candidates.map((candidate) => (
               <article
-                className={`candidate-card ${candidate.selected ? "selected" : ""}`}
+                className={`candidate-card ${candidate.selected ? "selected" : ""} ${candidate.locked ? "locked" : ""}`}
                 data-testid={`candidate-${candidate.candidateNumber}`}
                 key={candidate.id}
               >
@@ -957,6 +958,11 @@ export function RoundWorkspacePage() {
                   {candidate.selected && (
                     <span className="selected-flag">
                       <Check size={14} /> Selected
+                    </span>
+                  )}
+                  {candidate.locked && (
+                    <span className="locked-flag">
+                      <ShieldCheck size={14} /> Locked design
                     </span>
                   )}
                 </div>

@@ -78,3 +78,96 @@ export const importCandidateMetadataSchema = z.object({
 });
 
 export const uuidParameterSchema = z.uuid();
+
+export const designManifestFieldNames = [
+  "immutableFeatures",
+  "preferredFeatures",
+  "forbiddenFeatures",
+  "anatomyNotes",
+  "biologicalNotes",
+  "styleNotes",
+  "paletteNotes",
+  "textureNotes",
+  "cameraNotes",
+  "lightingNotes",
+  "animationNotes",
+  "canvasWidth",
+  "canvasHeight",
+  "facing",
+  "anchorX",
+  "anchorY",
+  "transparentBackgroundRequired",
+] as const;
+
+const manifestFeatureListSchema = z
+  .array(z.string().trim().min(1).max(1_000))
+  .max(100)
+  .refine((items) => new Set(items).size === items.length, {
+    message: "Feature entries must be unique within each list.",
+  });
+
+const manifestNotesSchema = z.string().trim().max(12_000).default("");
+
+export const designManifestInputSchema = z
+  .object({
+    immutableFeatures: manifestFeatureListSchema.default([]),
+    preferredFeatures: manifestFeatureListSchema.default([]),
+    forbiddenFeatures: manifestFeatureListSchema.default([]),
+    anatomyNotes: manifestNotesSchema,
+    biologicalNotes: manifestNotesSchema,
+    styleNotes: manifestNotesSchema,
+    paletteNotes: manifestNotesSchema,
+    textureNotes: manifestNotesSchema,
+    cameraNotes: manifestNotesSchema,
+    lightingNotes: manifestNotesSchema,
+    animationNotes: manifestNotesSchema,
+    canvasWidth: z.coerce.number().int().min(1).max(8192),
+    canvasHeight: z.coerce.number().int().min(1).max(8192),
+    facing: z.enum(["left", "right", "front", "back"]),
+    anchorX: z.coerce.number().int().min(0),
+    anchorY: z.coerce.number().int().min(0),
+    transparentBackgroundRequired: z.boolean(),
+    explicitFields: z
+      .array(z.enum(designManifestFieldNames))
+      .default([])
+      .transform((fields) => [...new Set(fields)]),
+    confirmedLockedMismatch: z.boolean().default(false),
+    actor: z.string().trim().min(1).max(120).default("LOCAL_USER"),
+  })
+  .superRefine((value, context) => {
+    if (value.anchorX >= value.canvasWidth) {
+      context.addIssue({
+        code: "custom",
+        path: ["anchorX"],
+        message: "Anchor X must be inside the canvas width.",
+      });
+    }
+    if (value.anchorY >= value.canvasHeight) {
+      context.addIssue({
+        code: "custom",
+        path: ["anchorY"],
+        message: "Anchor Y must be inside the canvas height.",
+      });
+    }
+  });
+
+export type DesignManifestInput = z.infer<typeof designManifestInputSchema>;
+
+export const lockDesignInputSchema = z.object({
+  candidateId: z.uuid(),
+  confirmed: z.boolean().default(false),
+  actor: z.string().trim().min(1).max(120).default("LOCAL_USER"),
+});
+
+export const unlockDesignInputSchema = z.object({
+  confirmed: z.boolean().default(false),
+  actor: z.string().trim().min(1).max(120).default("LOCAL_USER"),
+});
+
+export const candidateRejectionInputSchema = z.object({
+  rejected: z.boolean(),
+});
+
+export const destructiveActionInputSchema = z.object({
+  confirmed: z.boolean().default(false),
+});

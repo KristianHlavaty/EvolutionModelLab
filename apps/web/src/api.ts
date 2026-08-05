@@ -31,7 +31,7 @@ export async function api<T>(url: string, init?: RequestInit): Promise<T> {
 }
 
 export function jsonRequest(
-  method: "POST" | "PATCH",
+  method: "POST" | "PATCH" | "DELETE",
   body?: unknown,
 ): RequestInit {
   const request: RequestInit = {

@@ -13,11 +13,4 @@ export default defineConfig({
     screenshot: "only-on-failure",
     ...devices["Desktop Chrome"],
   },
-  webServer: {
-    command:
-      "corepack pnpm exec cross-env DATABASE_PATH=.tmp/e2e/data/app.db WORKSPACE_PATH=.tmp/e2e/workspace EXPORTS_PATH=.tmp/e2e/exports SERVER_PORT=3011 WEB_PORT=5181 corepack pnpm dev",
-    url: "http://127.0.0.1:5181/api/health",
-    reuseExistingServer: false,
-    timeout: 120_000,
-  },
 });

@@ -11,8 +11,8 @@ The complete intended state sequence is:
 - **DRAFT:** creature identity and brief exist. A concept round may be created.
 - **CONCEPT:** Concept Round 1 exists. One to ten real PNG candidates may be imported.
 - **CANDIDATE_SELECTED:** exactly one active parent is selected in the current round. Ordered feedback may be saved for that parent and a refinement round may be created.
-- **REFINING:** a new immutable refinement round references the selected parent and a frozen feedback snapshot. Real PNG refinements may be imported, compared, and selected for another iteration. Milestone 2 ends here.
-- **DESIGN_LOCKED:** an explicitly confirmed candidate and design manifest are canonical. Planned for Milestone 3.
+- **REFINING:** a new immutable refinement round references the selected parent and a frozen feedback snapshot. Real PNG refinements may be imported, compared, selected for another iteration, or explicitly design-locked.
+- **DESIGN_LOCKED:** an explicitly confirmed candidate and frozen Design Manifest version are the active design authority. Unlocking explicitly returns the project to `REFINING`; a later lock may select a different current-round candidate without destroying prior lock history.
 - **REFERENCE_BUILDING:** canonical views are being requested and reviewed one at a time. Planned for Milestone 5.
 - **REFERENCE_APPROVED:** configured mandatory references are approved.
 - **ANIMATING:** key poses, then intermediates, are being built. Planned for Milestone 6.
@@ -21,7 +21,7 @@ The complete intended state sequence is:
 
 The application must never skip a gated state silently. Unlocking, locking, reference approval, animation approval, and export require explicit confirmation in the milestone that implements them.
 
-## Rules enforced through Milestone 2
+## Rules enforced through Milestone 3
 
 - A concept round can only be created from `DRAFT`.
 - A concept round is immutable and saves its own prompt/context files.
@@ -36,3 +36,12 @@ The application must never skip a gated state silently. Unlocking, locking, refe
 - Candidate imports and selection changes are rejected for historical rounds.
 - Contact-sheet preview preserves the uploaded original before confirmation. Layout revisions reuse that immutable original.
 - Confirmation creates candidates only from explicitly selected, visible crop rectangles and never permits more than ten active candidates in the round.
+- Every creature has one persisted Design Manifest draft with ordered immutable, preferred, and forbidden feature lists; approved notes; canvas dimensions; facing; anchor; and transparency requirements.
+- Manifest fields distinguish untouched project defaults from explicit project-owner edits. The application does not synthesize biological or anatomical facts.
+- An active lock requires an explicitly acknowledged confirmation, exactly one selected candidate in the current round, matching creature ownership, a valid non-rejected candidate, and a source PNG whose guarded path, bytes, and saved hash still agree.
+- A successful first lock freezes a numbered manifest snapshot, copies the selected original without changing it, sets `DESIGN_LOCKED`, and records candidate/round/manifest/actor history.
+- Frozen manifest snapshots and numbered history files are never overwritten. Saving a changed manifest after a lock requires a separate explicit acknowledgement and creates the next immutable version.
+- The active locked candidate cannot be rejected or deleted, and its source round cannot be deleted. Rejected protected actions are appended to history.
+- Imports do not replace the active locked design. Relocking explicitly archives the previous active reference before activating the new selected candidate.
+- Unlock requires explicit acknowledgement, preserves references and all history, clears the active locked candidate relationship, and returns the creature to `REFINING`.
+- Filesystem work for locking is staged with exclusive creation. A failed database transaction removes only newly staged files and leaves existing originals, references, and history untouched.

@@ -8,6 +8,7 @@ import {
   contactSheetImports,
   createDatabase,
   creatureProjects,
+  designManifests,
   generationRounds,
   historyEvents,
   projectSettings,
@@ -33,10 +34,18 @@ import {
   type ContactSheetLayoutInput,
   type CandidateSource,
   type CreateCreatureInput,
+  type DesignManifestInput,
 } from "@eml/shared";
 import { and, asc, desc, eq, isNull, ne } from "drizzle-orm";
 
 import { AppError } from "./errors.js";
+import {
+  DesignWorkflow,
+  type CreatureDesignOverview,
+  type DesignHistoryView,
+  type DesignLockView,
+  type DesignManifestView,
+} from "./design.js";
 import {
   assertPathWithin,
   fromRepositoryRelative,
@@ -88,6 +97,7 @@ export interface CandidateView {
   source: string;
   rejected: boolean;
   selected: boolean;
+  locked: boolean;
   thumbnailUrl: string;
   imageUrl: string;
   createdAt: string;
@@ -116,9 +126,11 @@ export interface CreatureSummary {
   generationBrief: string;
   status: string;
   currentRoundId: string | null;
+  lockedCandidateId: string | null;
   createdAt: string;
   updatedAt: string;
   selectedCandidate: CandidateView | null;
+  lockedCandidate: CandidateView | null;
   roundCount: number;
 }
 
@@ -158,6 +170,9 @@ export interface ContactSheetPreview {
 }
 
 export interface CreatureDetail extends CreatureSummary {
+  manifest: DesignManifestView | null;
+  activeLock: DesignLockView | null;
+  lockHistory: DesignLockView[];
   rounds: Array<{
     id: string;
     roundNumber: number;
@@ -214,6 +229,7 @@ type CandidateViewSource = Pick<
 function candidateToView(
   candidate: CandidateViewSource,
   feedback: CandidateFeedbackView | null = null,
+  locked = false,
 ): CandidateView {
   return {
     id: candidate.id,
@@ -228,6 +244,7 @@ function candidateToView(
     source: candidate.source,
     rejected: candidate.rejected,
     selected: candidate.selected,
+    locked,
     thumbnailUrl: `/api/candidates/${candidate.id}/thumbnail`,
     imageUrl: `/api/candidates/${candidate.id}/image`,
     createdAt: candidate.createdAt,
@@ -288,6 +305,7 @@ export class EvolutionModelLabService {
   public readonly workspaceRoot: string;
   public readonly exportsRoot: string;
   private readonly database: DatabaseHandle;
+  private readonly design: DesignWorkflow;
   private readonly limits: ImageLimits;
   private readonly maximumFilesPerImport: number;
 
@@ -320,6 +338,12 @@ export class EvolutionModelLabService {
     };
     this.maximumFilesPerImport = options.maximumFilesPerImport ?? 10;
     this.ensureDefaultSettings();
+    this.design = new DesignWorkflow(
+      this.database.db,
+      this.repositoryRoot,
+      this.workspaceRoot,
+      this.limits,
+    );
   }
 
   close(): void {
@@ -370,7 +394,11 @@ export class EvolutionModelLabService {
   }
 
   private candidateView(candidate: CandidateViewSource): CandidateView {
-    return candidateToView(candidate, this.feedbackForCandidate(candidate.id));
+    return candidateToView(
+      candidate,
+      this.feedbackForCandidate(candidate.id),
+      this.design.isCandidateLocked(candidate.id),
+    );
   }
 
   async createCreature(input: CreateCreatureInput): Promise<CreatureDetail> {
@@ -391,6 +419,7 @@ export class EvolutionModelLabService {
 
     const id = randomUUID();
     const timestamp = now();
+    const initialManifest = this.design.buildInitialManifest(id, timestamp);
     const creatureRoot = resolveWithin(this.workspaceRoot, "creatures", slug);
     const manifestPath = resolveWithin(creatureRoot, "manifest.json");
 
@@ -401,25 +430,10 @@ export class EvolutionModelLabService {
     await mkdir(resolveWithin(creatureRoot, "exports"), { recursive: true });
 
     try {
-      await writeFile(
-        manifestPath,
-        `${JSON.stringify(
-          {
-            schemaVersion: 1,
-            creature: {
-              id,
-              slug,
-              displayName: parsed.displayName,
-              scientificName: parsed.scientificName ?? null,
-              status: "DRAFT",
-            },
-            createdAt: timestamp,
-          },
-          null,
-          2,
-        )}\n`,
-        { encoding: "utf8", flag: "wx" },
-      );
+      await writeFile(manifestPath, initialManifest.serialized, {
+        encoding: "utf8",
+        flag: "wx",
+      });
 
       this.database.db.transaction((tx) => {
         tx.insert(creatureProjects)
@@ -435,6 +449,7 @@ export class EvolutionModelLabService {
             updatedAt: timestamp,
           })
           .run();
+        tx.insert(designManifests).values(initialManifest.row).run();
         tx.insert(historyEvents)
           .values({
             id: randomUUID(),
@@ -443,6 +458,19 @@ export class EvolutionModelLabService {
             entityId: id,
             action: "PROJECT_CREATED",
             payload: JSON.stringify({ displayName: parsed.displayName, slug }),
+            createdAt: timestamp,
+          })
+          .run();
+        tx.insert(historyEvents)
+          .values({
+            id: randomUUID(),
+            creatureProjectId: id,
+            entityType: "DesignManifest",
+            entityId: initialManifest.row.id,
+            action: "MANIFEST_CREATED",
+            payload: JSON.stringify({ source: "PROJECT_DEFAULTS" }),
+            manifestVersion: 0,
+            actor: "SYSTEM",
             createdAt: timestamp,
           })
           .run();
@@ -501,6 +529,13 @@ export class EvolutionModelLabService {
               .get()
           : undefined;
       }
+      const locked = creature.lockedCandidateId
+        ? this.database.db
+            .select()
+            .from(candidates)
+            .where(eq(candidates.id, creature.lockedCandidateId))
+            .get()
+        : undefined;
       return {
         id: creature.id,
         slug: creature.slug,
@@ -510,9 +545,11 @@ export class EvolutionModelLabService {
         generationBrief: creature.generationBrief,
         status: creature.status,
         currentRoundId: creature.currentRoundId,
+        lockedCandidateId: creature.lockedCandidateId,
         createdAt: creature.createdAt,
         updatedAt: creature.updatedAt,
         selectedCandidate: selected ? this.candidateView(selected) : null,
+        lockedCandidate: locked ? this.candidateView(locked) : null,
         roundCount: roundRows.length,
       };
     });
@@ -627,6 +664,14 @@ export class EvolutionModelLabService {
         .where(eq(candidates.id, currentRoundRow.parentCandidateId))
         .get();
     }
+    const locked = creature.lockedCandidateId
+      ? this.database.db
+          .select()
+          .from(candidates)
+          .where(eq(candidates.id, creature.lockedCandidateId))
+          .get()
+      : undefined;
+    const design = this.design.getOverview(creature.id);
 
     return {
       id: creature.id,
@@ -637,10 +682,15 @@ export class EvolutionModelLabService {
       generationBrief: creature.generationBrief,
       status: creature.status,
       currentRoundId: creature.currentRoundId,
+      lockedCandidateId: creature.lockedCandidateId,
       createdAt: creature.createdAt,
       updatedAt: creature.updatedAt,
       selectedCandidate: selected ? this.candidateView(selected) : null,
+      lockedCandidate: locked ? this.candidateView(locked) : null,
       roundCount: rounds.length,
+      manifest: design.manifest,
+      activeLock: design.activeLock,
+      lockHistory: design.lockHistory,
       rounds,
       currentRound: currentRoundRow
         ? {
@@ -1154,7 +1204,12 @@ export class EvolutionModelLabService {
         .where(eq(candidates.id, candidate.id))
         .run();
       tx.update(creatureProjects)
-        .set({ status: "CANDIDATE_SELECTED", updatedAt: timestamp })
+        .set({
+          status: this.design.hasActiveLock(round.creatureProjectId)
+            ? "DESIGN_LOCKED"
+            : "CANDIDATE_SELECTED",
+          updatedAt: timestamp,
+        })
         .where(eq(creatureProjects.id, round.creatureProjectId))
         .run();
       tx.insert(historyEvents)
@@ -1872,5 +1927,57 @@ export class EvolutionModelLabService {
   async readCandidateOriginal(candidateId: string): Promise<Buffer> {
     const media = this.getCandidateMedia(candidateId, "image");
     return readFile(media.path);
+  }
+
+  getDesignOverview(creatureId: string): CreatureDesignOverview {
+    return this.design.getOverview(creatureId);
+  }
+
+  async getDesignManifest(creatureId: string): Promise<DesignManifestView> {
+    return this.design.getManifest(creatureId);
+  }
+
+  async saveDesignManifest(
+    creatureId: string,
+    input: DesignManifestInput,
+  ): Promise<DesignManifestView> {
+    return this.design.saveManifest(creatureId, input);
+  }
+
+  async lockDesign(
+    creatureId: string,
+    input: { candidateId: string; confirmed: boolean; actor: string },
+  ): Promise<CreatureDesignOverview> {
+    return this.design.lockDesign(creatureId, input);
+  }
+
+  unlockDesign(
+    creatureId: string,
+    input: { confirmed: boolean; actor: string },
+  ): CreatureDesignOverview {
+    return this.design.unlockDesign(creatureId, input);
+  }
+
+  getDesignHistory(creatureId: string): DesignHistoryView[] {
+    return this.design.getHistory(creatureId);
+  }
+
+  setCandidateRejected(candidateId: string, rejected: boolean): void {
+    this.design.setCandidateRejected(candidateId, rejected);
+  }
+
+  deleteCandidate(candidateId: string, confirmed: boolean): void {
+    this.design.deleteCandidate(candidateId, confirmed);
+  }
+
+  deleteRound(roundId: string, confirmed: boolean): void {
+    this.design.deleteRound(roundId, confirmed);
+  }
+
+  getLockedDesignMedia(creatureId: string): {
+    path: string;
+    mimeType: string;
+  } {
+    return this.design.getLockedDesignMedia(creatureId);
   }
 }
