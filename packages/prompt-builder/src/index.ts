@@ -93,6 +93,29 @@ export interface ReferencePromptInput {
   };
 }
 
+export interface AnimationPromptInput {
+  displayName: string;
+  animationName: string;
+  animationType: string;
+  lockedCandidateId: string;
+  manifestVersion: number;
+  immutableFeatures: string[];
+  forbiddenFeatures: string[];
+  animationNotes: string;
+  frameCount: number;
+  canvasWidth: number;
+  canvasHeight: number;
+  facing: string;
+  anchorX: number;
+  anchorY: number;
+}
+
+export interface AnimationRepairPromptInput extends AnimationPromptInput {
+  frameNumber: number;
+  brokenFrameId: string;
+  repairInstructions: string;
+}
+
 function identity(input: {
   displayName: string;
   scientificName?: string | null;
@@ -281,5 +304,73 @@ export function buildReferencePrompt(input: ReferencePromptInput): string {
       ? "Labels and restrained diagram callouts are allowed only where they clarify anatomy already approved in the manifest."
       : "Do not add labels, text, arrows, diagram marks, borders, or extra views.",
     "Return one standalone PNG, not a contact sheet and not an animation frame sequence.",
+  ].join("\n");
+}
+
+function animationIdentity(input: AnimationPromptInput): string[] {
+  return [
+    `Creature: ${input.displayName}`,
+    `Animation: ${input.animationName} (${input.animationType})`,
+    `Locked candidate: ${input.lockedCandidateId}`,
+    `Frozen manifest version: ${input.manifestVersion}`,
+    ...feedbackSection("Immutable identity features", input.immutableFeatures),
+    ...feedbackSection("Forbidden changes", input.forbiddenFeatures),
+    `Canvas: ${input.canvasWidth} Ă— ${input.canvasHeight} pixels`,
+    `Facing: ${input.facing}`,
+    `Ground/anchor point: ${input.anchorX}, ${input.anchorY}`,
+    `Animation notes: ${input.animationNotes || "No additional notes."}`,
+  ];
+}
+
+export function buildAnimationKeyPosePrompt(
+  input: AnimationPromptInput,
+): string {
+  return [
+    "# Evolution Model Lab â€” Animation Key-Pose Request",
+    "",
+    ...animationIdentity(input),
+    "",
+    "## Required output",
+    "Use the attached locked design and approved canonical references as the exact identity authority.",
+    `Create the ${input.frameCount} ordered key poses needed for this named animation before adding any intermediate frames.`,
+    "Maintain the exact anatomy, markings, palette, material treatment, scale, camera, facing, lighting, and anchor point in every frame.",
+    "Keep the complete creature inside the canvas on a transparent background with no text, border, decoration, or unrelated object.",
+    "Do not introduce anatomy drift or redesign any structure between poses.",
+    "Return separate PNG frames in playback order.",
+  ].join("\n");
+}
+
+export function buildAnimationIntermediatePrompt(
+  input: AnimationPromptInput,
+): string {
+  return [
+    "# Evolution Model Lab â€” Animation Intermediate-Frame Request",
+    "",
+    ...animationIdentity(input),
+    "",
+    "## Required output",
+    "Use the attached approved key poses as fixed adjacent endpoints and the locked design as the identity authority.",
+    "Create only the missing intermediate frames needed to connect those poses smoothly, in playback order.",
+    "Preserve anatomy, markings, palette, scale, camera, canvas, facing, lighting, and anchor alignment exactly.",
+    "Do not change either approved endpoint and do not add unrelated poses or redesigns.",
+    "Keep each complete creature inside the transparent canvas and return separate PNG frames.",
+  ].join("\n");
+}
+
+export function buildAnimationRepairPrompt(
+  input: AnimationRepairPromptInput,
+): string {
+  return [
+    "# Evolution Model Lab â€” Animation Frame Repair Request",
+    "",
+    ...animationIdentity(input),
+    `Broken frame: ${input.frameNumber} (${input.brokenFrameId})`,
+    "",
+    "## Required repair",
+    input.repairInstructions,
+    "",
+    "Use the attached locked reference and broken frame. Repair only the stated defect.",
+    "Preserve every correct part of the frame, including identity, anatomy, markings, canvas, orientation, scale, anchor, and timing intent.",
+    "Return exactly one transparent PNG replacement. Do not make unrelated changes.",
   ].join("\n");
 }

@@ -78,6 +78,11 @@ Open [http://127.0.0.1:5173](http://127.0.0.1:5173). The single `pnpm dev` comma
 24. Compare the image with the locked design and choose **Review and approve**. Approval requires a separate confirmation and only satisfies rules for the exact design lock that seeded the request.
 25. Use **Settings → Mandatory references** to configure the project-level gate. The default requires the locked design, strict side profile, silhouette, and colour/material reference.
 26. A later unlock/relock keeps earlier references visible as history but marks them stale for the new identity authority. Required views must be approved again before Animation Lab can begin.
+27. Open **Animation Lab** after the mandatory reference set is approved. Create a named sequence with type, expected frame count, FPS, loop setting, and the manifest canvas; the app immediately saves a key-pose prompt tied to the exact design lock.
+28. Use the prompt and attached locked/canonical references in ChatGPT, then return with separate real PNG frames. Import by picker, drag/drop, or clipboard and review frame roles, order, duration, notes, edge/canvas warnings, and likely duplicates.
+29. Play at 0.25Ă—, 0.5Ă—, 1Ă—, or 2Ă— speed. Use previous/next onion skins, the locked-reference overlay, and bounds/center/anchor guides to inspect continuity without changing original pixels.
+30. Save an intermediate prompt after at least two key poses. Mark a broken frame before saving a targeted repair prompt; importing its replacement creates a new revision while preserving the broken original in history.
+31. Explicitly approve only when the exact expected frame count is active, the current reference gate still holds, and no frame remains marked for repair.
 
 ## Commands
 
@@ -90,7 +95,7 @@ pnpm format:check     # verify formatting
 pnpm lint             # ESLint
 pnpm typecheck        # strict TypeScript checks
 pnpm test             # Vitest unit/integration tests
-pnpm test:e2e         # Playwright workflows through canonical references
+pnpm test:e2e         # Playwright workflows through animation approval
 pnpm build            # production compile/build check
 pnpm db:migrate       # apply committed Drizzle migrations
 pnpm db:generate      # generate a migration after an intentional schema change
@@ -115,4 +120,4 @@ When MCP is implemented, it will use the same `packages/core` application servic
 
 ## Current limitations
 
-Animation, exports, MCP, and plugin skills remain intentionally pending later milestones. Reference validation proves file integrity and records canvas/transparency warnings; semantic identity matching still requires explicit human approval. Evolution currently models one approved parent per descendant; mutations are frozen when the descendant is created, and ancestor/descendant comparison is side-by-side. Local history actors are recorded as `LOCAL_USER` or `SYSTEM`; authentication and named-user identity are not implemented. Contact-sheet import supports PNG grids with explicit rows, columns, outer margins, and horizontal/vertical gaps; it does not guess irregular cell boundaries. See [docs/implementation-plan.md](docs/implementation-plan.md) for exact status and limitations.
+Exports, MCP, ChatGPT integration, and plugin skills remain intentionally pending later milestones. Reference validation proves file integrity and records canvas/transparency warnings; semantic identity matching still requires explicit human approval. Animation continuity checks are image heuristics rather than anatomy recognition, and the app imports finished PNG frames rather than generating or interpolating motion. Evolution currently models one approved parent per descendant; mutations are frozen when the descendant is created, and ancestor/descendant comparison is side-by-side. Local history actors are recorded as `LOCAL_USER` or `SYSTEM`; authentication and named-user identity are not implemented. Contact-sheet import supports PNG grids with explicit rows, columns, outer margins, and horizontal/vertical gaps; it does not guess irregular cell boundaries. See [docs/implementation-plan.md](docs/implementation-plan.md) for exact status and limitations.

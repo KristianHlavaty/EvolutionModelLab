@@ -77,3 +77,46 @@ export const requestableReferenceTypes = [
   "COLOUR_MATERIAL",
   "ANATOMY_DIAGRAM",
 ] as const satisfies readonly Exclude<ReferenceType, "LOCKED_DESIGN">[];
+
+export const animationTypes = [
+  "IDLE",
+  "SWIM",
+  "WALK",
+  "RUN",
+  "ATTACK",
+  "HURT",
+  "DEATH",
+  "EAT",
+  "LEVEL_UP",
+  "CUSTOM",
+] as const;
+
+export type AnimationType = (typeof animationTypes)[number];
+
+export const animationStatuses = [
+  "DRAFT",
+  "KEY_POSES",
+  "INTERMEDIATES",
+  "REVIEW",
+  "APPROVED",
+  "EXPORTED",
+] as const;
+
+export type AnimationStatus = (typeof animationStatuses)[number];
+
+export const frameRoles = [
+  "KEY_POSE",
+  "INTERMEDIATE",
+  "REPAIR",
+  "HOLD",
+] as const;
+
+export type FrameRole = (typeof frameRoles)[number];
+
+export const animationPromptTypes = [
+  "KEY_POSES",
+  "INTERMEDIATES",
+  "REPAIR",
+] as const;
+
+export type AnimationPromptType = (typeof animationPromptTypes)[number];

@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { createSolidPng } from "../../test-fixtures/src/png.js";
+import { createGridPng, createSolidPng } from "../../test-fixtures/src/png.js";
 import {
   calculateCropRectangles,
+  inspectAnimationPng,
   inspectPng,
   normalizeOriginalFilename,
+  perceptualHashDistance,
 } from "./index.js";
 import type { ImageInspectionError } from "./index.js";
 
@@ -42,6 +44,44 @@ describe("original filename metadata", () => {
       "dunkle.png",
     );
     expect(normalizeOriginalFilename("")).toBe("clipboard-image.png");
+  });
+});
+
+describe("animation PNG inspection", () => {
+  it("measures visible bounds, center, edge contact, and a stable perceptual hash", async () => {
+    const transparent = [0, 0, 0, 0] as const;
+    const visible = [20, 120, 180, 255] as const;
+    const image = createGridPng(6, 6, 3, 3, [
+      transparent,
+      transparent,
+      transparent,
+      transparent,
+      visible,
+      transparent,
+      transparent,
+      transparent,
+      transparent,
+    ]);
+    const inspected = await inspectAnimationPng(image, limits);
+
+    expect(inspected.metrics).toMatchObject({
+      boundingBoxX: 2,
+      boundingBoxY: 2,
+      boundingBoxWidth: 2,
+      boundingBoxHeight: 2,
+      centerX: 2.5,
+      centerY: 2.5,
+      opaquePixelCount: 4,
+      touchesCanvasEdge: false,
+    });
+    expect(inspected.metrics.perceptualHash).toMatch(/^[a-f0-9]{16}$/);
+    expect(
+      perceptualHashDistance(
+        inspected.metrics.perceptualHash,
+        inspected.metrics.perceptualHash,
+      ),
+    ).toBe(0);
+    expect(perceptualHashDistance("invalid", "also-invalid")).toBe(64);
   });
 });
 

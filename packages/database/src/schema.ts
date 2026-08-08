@@ -2,6 +2,7 @@ import { sql } from "drizzle-orm";
 import {
   index,
   integer,
+  real,
   sqliteTable,
   text,
   uniqueIndex,
@@ -173,6 +174,8 @@ export const historyEvents = sqliteTable(
     generationRoundId: text("generation_round_id"),
     manifestVersion: integer("manifest_version"),
     referenceImageId: text("reference_image_id"),
+    animationId: text("animation_id"),
+    animationFrameId: text("animation_frame_id"),
     actor: text("actor"),
     createdAt: text("created_at").notNull(),
   },
@@ -348,6 +351,108 @@ export const referenceImages = sqliteTable(
     index("reference_images_status_idx").on(table.status),
     uniqueIndex("reference_images_prompt_path_unique").on(table.promptPath),
     uniqueIndex("reference_images_image_path_unique").on(table.imagePath),
+  ],
+);
+
+export const animations = sqliteTable(
+  "animations",
+  {
+    id: text("id").primaryKey(),
+    creatureProjectId: text("creature_project_id")
+      .notNull()
+      .references(() => creatureProjects.id, { onDelete: "restrict" }),
+    designLockId: text("design_lock_id")
+      .notNull()
+      .references(() => designLocks.id, { onDelete: "restrict" }),
+    name: text("name").notNull(),
+    animationType: text("animation_type").notNull(),
+    status: text("status").notNull().default("KEY_POSES"),
+    fps: integer("fps").notNull().default(12),
+    looping: integer("looping", { mode: "boolean" }).notNull().default(true),
+    canvasWidth: integer("canvas_width").notNull(),
+    canvasHeight: integer("canvas_height").notNull(),
+    expectedFrameCount: integer("expected_frame_count").notNull().default(8),
+    createdAt: text("created_at").notNull(),
+    updatedAt: text("updated_at").notNull(),
+    deletedAt: text("deleted_at"),
+  },
+  (table) => [
+    index("animations_creature_idx").on(table.creatureProjectId),
+    index("animations_lock_idx").on(table.designLockId),
+    uniqueIndex("animations_creature_name_unique")
+      .on(table.creatureProjectId, table.name)
+      .where(sql`${table.deletedAt} IS NULL`),
+  ],
+);
+
+export const animationFrames = sqliteTable(
+  "animation_frames",
+  {
+    id: text("id").primaryKey(),
+    animationId: text("animation_id")
+      .notNull()
+      .references(() => animations.id, { onDelete: "restrict" }),
+    frameNumber: integer("frame_number").notNull(),
+    frameRole: text("frame_role").notNull(),
+    imagePath: text("image_path").notNull(),
+    thumbnailPath: text("thumbnail_path").notNull(),
+    source: text("source").notNull(),
+    originalFilename: text("original_filename").notNull(),
+    durationMs: integer("duration_ms").notNull().default(83),
+    width: integer("width").notNull(),
+    height: integer("height").notNull(),
+    hasAlpha: integer("has_alpha", { mode: "boolean" }).notNull(),
+    fileHash: text("file_hash").notNull(),
+    perceptualHash: text("perceptual_hash").notNull(),
+    boundingBoxX: integer("bounding_box_x").notNull(),
+    boundingBoxY: integer("bounding_box_y").notNull(),
+    boundingBoxWidth: integer("bounding_box_width").notNull(),
+    boundingBoxHeight: integer("bounding_box_height").notNull(),
+    centerX: real("center_x").notNull(),
+    centerY: real("center_y").notNull(),
+    opaquePixelCount: integer("opaque_pixel_count").notNull(),
+    touchesCanvasEdge: integer("touches_canvas_edge", { mode: "boolean" })
+      .notNull()
+      .default(false),
+    validationStatus: text("validation_status").notNull().default("VALID"),
+    validationMessages: text("validation_messages").notNull().default("[]"),
+    markedForRepair: integer("marked_for_repair", { mode: "boolean" })
+      .notNull()
+      .default(false),
+    notes: text("notes").notNull().default(""),
+    replacesFrameId: text("replaces_frame_id"),
+    createdAt: text("created_at").notNull(),
+    deletedAt: text("deleted_at"),
+  },
+  (table) => [
+    index("animation_frames_animation_idx").on(table.animationId),
+    uniqueIndex("animation_frames_number_unique")
+      .on(table.animationId, table.frameNumber)
+      .where(sql`${table.deletedAt} IS NULL`),
+    uniqueIndex("animation_frames_hash_unique")
+      .on(table.animationId, table.fileHash)
+      .where(sql`${table.deletedAt} IS NULL`),
+  ],
+);
+
+export const animationPrompts = sqliteTable(
+  "animation_prompts",
+  {
+    id: text("id").primaryKey(),
+    animationId: text("animation_id")
+      .notNull()
+      .references(() => animations.id, { onDelete: "restrict" }),
+    promptType: text("prompt_type").notNull(),
+    relatedFrameId: text("related_frame_id"),
+    generatedPrompt: text("generated_prompt").notNull(),
+    promptPath: text("prompt_path").notNull(),
+    contextPath: text("context_path").notNull(),
+    actor: text("actor"),
+    createdAt: text("created_at").notNull(),
+  },
+  (table) => [
+    index("animation_prompts_animation_idx").on(table.animationId),
+    uniqueIndex("animation_prompts_path_unique").on(table.promptPath),
   ],
 );
 

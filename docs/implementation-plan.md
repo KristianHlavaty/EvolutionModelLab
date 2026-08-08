@@ -127,7 +127,7 @@ The table deliberately permits multiple historical attempts of one type while co
 | 3         | Design lock, manifest, history expansion             | Completed |
 | 4         | Evolution lineage and mutations                      | Completed |
 | 5         | Canonical references and approval gates              | Completed |
-| 6         | Animation Lab and repair workflow                    | Pending   |
+| 6         | Animation Lab and repair workflow                    | Completed |
 | 7         | Validation and game-ready export                     | Pending   |
 | 8         | Streamable HTTP MCP server and tools                 | Pending   |
 | 9         | ChatGPT Developer Mode integration and handoff spike | Pending   |
@@ -276,9 +276,44 @@ The core suite verifies missing-lock and duplicate-pending gates, frozen manifes
 
 Manual in-app browser QA inspected the completed reference set and warnings, reference-type grid, collapsed prompt history, project settings, and mandatory-rule defaults at desktop and 700-pixel widths. The page had no horizontal overflow and reported no browser console warnings or errors. Isolated manual-QA services were stopped afterward.
 
+## Milestone 6 acceptance criteria
+
+- [x] Animation creation is blocked until the current design lock satisfies every configured mandatory reference and freezes the animation to that exact lock and manifest version.
+- [x] Animation types, statuses, FPS, looping, canvas dimensions, expected frame count, prompts, frames, repair relationships, history ownership, and soft deletion persist through the additive `0005_milestone_six.sql` migration.
+- [x] Deterministic key-pose, intermediate, and targeted-repair prompts preserve identity, anatomy, markings, scale, camera, canvas, facing, lighting, anchor, ordering, and transparent-output constraints.
+- [x] Manual picker, drag/drop, and clipboard paths import real PNG frames without paid generation calls; originals and thumbnails use separate exclusive paths and exact duplicates are rejected before persistence.
+- [x] Frame inspection stores alpha bounds, visible center, visible-pixel count, edge contact, SHA-256, and perceptual hash; adjacent canvas, center, bounds, opacity, and likely-duplicate differences remain visible review warnings rather than fake semantic judgments.
+- [x] The responsive Animation Lab provides first/previous/play-pause/next/last controls, 0.25Ă—/0.5Ă—/1Ă—/2Ă— playback, FPS/loop settings, checkerboard rendering, previous/next onion skins, opacity controls, locked-reference overlay, bounds, center, and anchor overlays.
+- [x] The frame strip supports deterministic numbering, KEY_POSE/INTERMEDIATE/REPAIR/HOLD roles, order changes, per-frame duration and notes, repair flags, explicit deletion confirmation, and warning markers.
+- [x] Repair prompts require a marked frame. Replacement creates a new active `REPAIR` revision with `replacesFrameId`, preserves the old original and row as immutable history, and does not modify unrelated frames.
+- [x] Approval requires explicit confirmation, the current design and mandatory references, the exact expected active-frame count, and no pending repair flags.
+- [x] Unit/integration and Playwright coverage exercise gates, prompt content, stored bytes, image metrics, duplicate rejection, ordering, intermediate handoff, repair revision preservation, playback/overlays, and approval.
+
+## Milestone 6 test status
+
+Final verification on 2026-08-08:
+
+| Command                          | Result                                                                                                             |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `corepack pnpm format:check`     | Passed; every matched file uses Prettier style                                                                     |
+| `corepack pnpm lint`             | Passed; 0 ESLint errors                                                                                            |
+| `corepack pnpm typecheck`        | Passed; packages, server, and web compile in strict mode                                                           |
+| `corepack pnpm test`             | Passed; 8 files and 35 Vitest unit/integration tests                                                               |
+| `corepack pnpm test:e2e`         | Passed; 5 complete Playwright workflows through eight-frame animation approval                                     |
+| `corepack pnpm build`            | Passed; packages/server compiled and Vite transformed 1,679 modules                                                |
+| Manual primary workflow exercise | Passed; list/lab, playback workbench, warnings, prompts, desktop and 700-pixel layouts, and no horizontal overflow |
+
+The Milestone 6 Playwright workflow reuses the fully approved reference fixture, creates an eight-frame swim, verifies the saved identity-constrained key-pose prompt, imports eight real PNGs, exercises playback, onion/bounds/center overlays and ordering, saves the intermediate prompt, and confirms approval. Earlier concept, refinement, design-lock, evolution, and reference workflows remain green.
+
+The core suite additionally verifies the reference gate, frozen lock/manifest prompt context, original byte preservation, exact duplicate rejection, calculated frame metrics and warnings, deterministic reordering, marked-frame repair prompting, replacement lineage with preserved old bytes, and approval invariants.
+
+Manual in-app browser QA inspected the persisted approved sequence at desktop and 700-pixel widths. Playback controls, frame review, validation warnings, checkerboard stage, frame strip, and prompt/approval surfaces remained readable, and the narrow layout had no horizontal overflow. The responsive override was reset, the browser tab finalized, and isolated QA services stopped afterward.
+
 ## Known limitations
 
-- Animation, export, MCP, and plugin skills remain deferred to their planned milestones.
+- Export, MCP, ChatGPT integration, and plugin skills remain deferred to their planned milestones.
+- Animation continuity checks are practical image heuristics, not semantic anatomy or identity recognition. Warnings require human review and do not auto-reject a frame.
+- Milestone 6 imports finished PNG frames; it does not generate motion, interpolate frames, or integrate a game engine.
 - Reference validation proves file integrity and records canvas/transparency checks; visual anatomy, identity, palette, and material consistency still require explicit human review.
 - A reference attempt accepts one separate PNG. Contact-sheet reference extraction and automatic semantic comparison are not implemented.
 - Evolution is a strict single-parent tree. Hybrid/multiple-parent descent and cross-project mutation merging are not modeled.

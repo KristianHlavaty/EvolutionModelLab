@@ -38,6 +38,27 @@ async function prepareE2eWorkspace(): Promise<void> {
       [40, 175, 175, 215],
     ]),
   );
+  const frameColours: Array<[number, number, number, number]> = [
+    [32, 112, 168, 210],
+    [44, 128, 154, 215],
+    [58, 142, 136, 220],
+    [74, 152, 112, 225],
+    [98, 158, 88, 230],
+    [128, 146, 66, 235],
+    [154, 124, 52, 240],
+    [174, 92, 48, 245],
+  ];
+  await Promise.all(
+    frameColours.map((colour, index) =>
+      writeFile(
+        resolve(
+          fixtureRoot,
+          `animation-frame-${String(index + 1).padStart(2, "0")}.png`,
+        ),
+        createSolidPng(80, 52, colour),
+      ),
+    ),
+  );
 }
 
 await prepareE2eWorkspace();

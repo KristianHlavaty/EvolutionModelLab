@@ -342,3 +342,61 @@ export interface ReferenceSettings {
   }>;
   updatedAt: string;
 }
+
+export type FrameRole = "KEY_POSE" | "INTERMEDIATE" | "REPAIR" | "HOLD";
+
+export interface AnimationFrame {
+  id: string;
+  animationId: string;
+  frameNumber: number;
+  frameRole: FrameRole;
+  originalFilename: string;
+  source: string;
+  durationMs: number;
+  width: number;
+  height: number;
+  hasAlpha: boolean;
+  fileHash: string;
+  perceptualHash: string;
+  boundingBox: { x: number; y: number; width: number; height: number };
+  center: { x: number; y: number };
+  opaquePixelCount: number;
+  touchesCanvasEdge: boolean;
+  validationStatus: string;
+  validationMessages: string[];
+  markedForRepair: boolean;
+  notes: string;
+  replacesFrameId: string | null;
+  imageUrl: string;
+  thumbnailUrl: string;
+  createdAt: string;
+}
+
+export interface AnimationPrompt {
+  id: string;
+  promptType: string;
+  relatedFrameId: string | null;
+  generatedPrompt: string;
+  createdAt: string;
+}
+
+export interface Animation {
+  id: string;
+  creatureProjectId: string;
+  designLockId: string;
+  name: string;
+  animationType: string;
+  status: string;
+  fps: number;
+  looping: boolean;
+  canvasWidth: number;
+  canvasHeight: number;
+  expectedFrameCount: number;
+  currentDesign: boolean;
+  lockedDesignUrl: string;
+  anchor: { x: number; y: number };
+  frames: AnimationFrame[];
+  prompts: AnimationPrompt[];
+  createdAt: string;
+  updatedAt: string;
+}

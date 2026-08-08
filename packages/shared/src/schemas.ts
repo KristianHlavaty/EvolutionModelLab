@@ -1,8 +1,10 @@
 import { z } from "zod";
 
 import {
+  animationTypes,
   candidateSources,
   evolutionMutationCategories,
+  frameRoles,
   referenceTypes,
   requestableReferenceTypes,
 } from "./domain.js";
@@ -81,6 +83,79 @@ export type ApproveReferenceInput = z.input<typeof approveReferenceInputSchema>;
 export type ProjectReferenceSettingsInput = z.input<
   typeof projectReferenceSettingsInputSchema
 >;
+
+export const createAnimationInputSchema = z.object({
+  name: z.string().trim().min(1).max(160),
+  animationType: z.enum(animationTypes),
+  fps: z.coerce.number().int().min(1).max(60).default(12),
+  looping: z.boolean().default(true),
+  canvasWidth: z.coerce.number().int().min(1).max(8192),
+  canvasHeight: z.coerce.number().int().min(1).max(8192),
+  expectedFrameCount: z.coerce.number().int().min(1).max(120).default(8),
+  actor: z.string().trim().min(1).max(120).default("LOCAL_USER"),
+});
+
+export const animationSettingsInputSchema = z.object({
+  fps: z.coerce.number().int().min(1).max(60),
+  looping: z.boolean(),
+  actor: z.string().trim().min(1).max(120).default("LOCAL_USER"),
+});
+
+export const importAnimationFrameMetadataSchema = z.object({
+  frameRole: z.enum(frameRoles).default("KEY_POSE"),
+  source: z.enum(candidateSources).default("MANUAL"),
+  actor: z.string().trim().min(1).max(120).default("LOCAL_USER"),
+});
+
+export const reorderAnimationFramesInputSchema = z.object({
+  frameIds: z
+    .array(z.uuid())
+    .min(1)
+    .max(120)
+    .refine((values) => new Set(values).size === values.length, {
+      message: "Each active frame must appear exactly once.",
+    }),
+  actor: z.string().trim().min(1).max(120).default("LOCAL_USER"),
+});
+
+export const updateAnimationFrameInputSchema = z.object({
+  frameRole: z.enum(frameRoles),
+  durationMs: z.coerce.number().int().min(1).max(60_000),
+  notes: z.string().trim().max(8_000).default(""),
+  markedForRepair: z.boolean(),
+  actor: z.string().trim().min(1).max(120).default("LOCAL_USER"),
+});
+
+export const repairPromptInputSchema = z.object({
+  repairInstructions: z.string().trim().min(1).max(8_000),
+  actor: z.string().trim().min(1).max(120).default("LOCAL_USER"),
+});
+
+export const replaceAnimationFrameMetadataSchema = z.object({
+  notes: z.string().trim().max(8_000).default(""),
+  actor: z.string().trim().min(1).max(120).default("LOCAL_USER"),
+});
+
+export const approveAnimationInputSchema = z.object({
+  confirmed: z.boolean().default(false),
+  actor: z.string().trim().min(1).max(120).default("LOCAL_USER"),
+});
+
+export type CreateAnimationInput = z.input<typeof createAnimationInputSchema>;
+export type AnimationSettingsInput = z.input<
+  typeof animationSettingsInputSchema
+>;
+export type ImportAnimationFrameMetadata = z.input<
+  typeof importAnimationFrameMetadataSchema
+>;
+export type ReorderAnimationFramesInput = z.input<
+  typeof reorderAnimationFramesInputSchema
+>;
+export type UpdateAnimationFrameInput = z.input<
+  typeof updateAnimationFrameInputSchema
+>;
+export type RepairPromptInput = z.input<typeof repairPromptInputSchema>;
+export type ApproveAnimationInput = z.input<typeof approveAnimationInputSchema>;
 
 export const createConceptRoundInputSchema = z.object({
   creatureId: z.uuid(),

@@ -50,6 +50,7 @@ import {
 } from "./MilestoneThree.tsx";
 import { EvolutionPage } from "./MilestoneFour.tsx";
 import { ReferencesPage, ReferenceSettingsPage } from "./MilestoneFive.tsx";
+import { AnimationLabPage, AnimationsPage } from "./MilestoneSix.tsx";
 import { PromptHistoryPage, RoundWorkspacePage } from "./MilestoneTwo.tsx";
 import type { Candidate, Creature, DashboardData, Round } from "./types.ts";
 
@@ -141,9 +142,6 @@ function AppShell({ children }: { children: ReactNode }) {
             </NavLink>
           ))}
           <p className="nav-label nav-section">Future labs</p>
-          <span className="nav-disabled">
-            <FlaskConical size={18} /> Animation Lab <small>M6</small>
-          </span>
           <span className="nav-disabled">
             <Sparkles size={18} /> MCP Bridge <small>M8</small>
           </span>
@@ -1174,18 +1172,11 @@ export function App() {
         />
         <Route
           path="/creatures/:creatureId/animations"
-          element={
-            <FutureFeaturePage title="Animation Lab" milestone="Milestone 6" />
-          }
+          element={<AnimationsPage />}
         />
         <Route
           path="/creatures/:creatureId/animations/:animationId"
-          element={
-            <FutureFeaturePage
-              title="Animation review"
-              milestone="Milestone 6"
-            />
-          }
+          element={<AnimationLabPage />}
         />
         <Route
           path="/creatures/:creatureId/export"

@@ -6,6 +6,8 @@ import { ZodError } from "zod";
 import { isAppError, type EvolutionModelLabService } from "@eml/core";
 import {
   approveReferenceInputSchema,
+  approveAnimationInputSchema,
+  animationSettingsInputSchema,
   candidateFeedbackInputSchema,
   candidateRejectionInputSchema,
   candidateSourceSchema,
@@ -19,6 +21,12 @@ import {
   importReferenceMetadataSchema,
   projectReferenceSettingsInputSchema,
   createReferenceInputSchema,
+  createAnimationInputSchema,
+  importAnimationFrameMetadataSchema,
+  reorderAnimationFramesInputSchema,
+  repairPromptInputSchema,
+  replaceAnimationFrameMetadataSchema,
+  updateAnimationFrameInputSchema,
   selectCandidateInputSchema,
   unlockDesignInputSchema,
   uuidParameterSchema,
@@ -45,12 +53,16 @@ export function createApp(service: EvolutionModelLabService): express.Express {
     storage: multer.memoryStorage(),
     limits: { fileSize: maximumUploadBytes, files: 10, fields: 12 },
   });
+  const animationUpload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: maximumUploadBytes, files: 120, fields: 12 },
+  });
 
   app.disable("x-powered-by");
   app.use(express.json({ limit: "1mb" }));
 
   app.get("/api/health", (_request, response) => {
-    response.json({ ok: true, service: "Evolution Model Lab", milestone: 5 });
+    response.json({ ok: true, service: "Evolution Model Lab", milestone: 6 });
   });
 
   app.get("/api/dashboard", (_request, response) => {
@@ -158,6 +170,146 @@ export function createApp(service: EvolutionModelLabService): express.Express {
   app.patch("/api/reference-settings", (request, response) => {
     const input = projectReferenceSettingsInputSchema.parse(request.body);
     response.json({ data: service.updateReferenceSettings(input) });
+  });
+
+  app.get("/api/creatures/:creatureId/animations", (request, response) => {
+    const creatureId = uuidParameterSchema.parse(request.params.creatureId);
+    response.json({ data: service.listAnimations(creatureId) });
+  });
+
+  app.post(
+    "/api/creatures/:creatureId/animations",
+    asyncRoute(async (request, response) => {
+      const creatureId = uuidParameterSchema.parse(request.params.creatureId);
+      const input = createAnimationInputSchema.parse(request.body);
+      response
+        .status(201)
+        .json({ data: await service.createAnimation(creatureId, input) });
+    }),
+  );
+
+  app.get("/api/animations/:animationId", (request, response) => {
+    const animationId = uuidParameterSchema.parse(request.params.animationId);
+    response.json({ data: service.getAnimation(animationId) });
+  });
+
+  app.patch("/api/animations/:animationId/settings", (request, response) => {
+    const animationId = uuidParameterSchema.parse(request.params.animationId);
+    const input = animationSettingsInputSchema.parse(request.body);
+    response.json({
+      data: service.updateAnimationSettings(animationId, input),
+    });
+  });
+
+  app.post(
+    "/api/animations/:animationId/frames",
+    animationUpload.array("images", 120),
+    asyncRoute(async (request, response) => {
+      const animationId = uuidParameterSchema.parse(request.params.animationId);
+      const metadata = importAnimationFrameMetadataSchema.parse(request.body);
+      const files = (request.files as Express.Multer.File[] | undefined) ?? [];
+      response.status(201).json({
+        data: await service.importAnimationFrames(
+          animationId,
+          files.map((file) => ({
+            buffer: file.buffer,
+            originalFilename: file.originalname,
+          })),
+          metadata.frameRole,
+          metadata.source,
+          metadata.actor,
+        ),
+      });
+    }),
+  );
+
+  app.patch(
+    "/api/animations/:animationId/frames/order",
+    (request, response) => {
+      const animationId = uuidParameterSchema.parse(request.params.animationId);
+      const input = reorderAnimationFramesInputSchema.parse(request.body);
+      response.json({
+        data: service.reorderAnimationFrames(animationId, input),
+      });
+    },
+  );
+
+  app.patch("/api/animation-frames/:frameId", (request, response) => {
+    const frameId = uuidParameterSchema.parse(request.params.frameId);
+    const input = updateAnimationFrameInputSchema.parse(request.body);
+    response.json({ data: service.updateAnimationFrame(frameId, input) });
+  });
+
+  app.delete("/api/animation-frames/:frameId", (request, response) => {
+    const frameId = uuidParameterSchema.parse(request.params.frameId);
+    const input = destructiveActionInputSchema.parse(request.body ?? {});
+    response.json({
+      data: service.deleteAnimationFrame(
+        frameId,
+        input.confirmed,
+        "LOCAL_USER",
+      ),
+    });
+  });
+
+  app.post(
+    "/api/animations/:animationId/prompts/intermediates",
+    asyncRoute(async (request, response) => {
+      const animationId = uuidParameterSchema.parse(request.params.animationId);
+      const metadata = importReferenceMetadataSchema.parse(request.body ?? {});
+      response.status(201).json({
+        data: await service.createIntermediateAnimationPrompt(
+          animationId,
+          metadata.actor,
+        ),
+      });
+    }),
+  );
+
+  app.post(
+    "/api/animation-frames/:frameId/prompts/repair",
+    asyncRoute(async (request, response) => {
+      const frameId = uuidParameterSchema.parse(request.params.frameId);
+      const input = repairPromptInputSchema.parse(request.body);
+      response.status(201).json({
+        data: await service.createAnimationRepairPrompt(frameId, input),
+      });
+    }),
+  );
+
+  app.post(
+    "/api/animation-frames/:frameId/replacement",
+    upload.single("image"),
+    asyncRoute(async (request, response) => {
+      const frameId = uuidParameterSchema.parse(request.params.frameId);
+      const metadata = replaceAnimationFrameMetadataSchema.parse(request.body);
+      if (!request.file) {
+        response.status(400).json({
+          error: {
+            code: "REPLACEMENT_IMAGE_REQUIRED",
+            message: "Choose one replacement PNG.",
+          },
+        });
+        return;
+      }
+      response.status(201).json({
+        data: await service.replaceAnimationFrame(
+          frameId,
+          {
+            buffer: request.file.buffer,
+            originalFilename: request.file.originalname,
+          },
+          metadata.notes,
+          metadata.actor,
+        ),
+      });
+    }),
+  );
+
+  app.post("/api/animations/:animationId/approve", (request, response) => {
+    const animationId = uuidParameterSchema.parse(request.params.animationId);
+    const input = approveAnimationInputSchema.parse(request.body);
+    response.json({ data: service.approveAnimation(animationId, input) });
   });
 
   app.post(
@@ -383,6 +535,27 @@ export function createApp(service: EvolutionModelLabService): express.Express {
         return;
       }
       const media = service.getReferenceMedia(referenceId, kind);
+      response.type(media.mimeType);
+      response.setHeader("Cache-Control", "private, max-age=3600");
+      response.sendFile(media.path, { dotfiles: "allow" }, (error) => {
+        if (error) next(error);
+      });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get("/api/animation-frames/:frameId/:kind", (request, response, next) => {
+    try {
+      const frameId = uuidParameterSchema.parse(request.params.frameId);
+      const kind = request.params.kind;
+      if (kind !== "image" && kind !== "thumbnail") {
+        response.status(404).json({
+          error: { code: "MEDIA_NOT_FOUND", message: "Media not found." },
+        });
+        return;
+      }
+      const media = service.getAnimationFrameMedia(frameId, kind);
       response.type(media.mimeType);
       response.setHeader("Cache-Control", "private, max-age=3600");
       response.sendFile(media.path, { dotfiles: "allow" }, (error) => {

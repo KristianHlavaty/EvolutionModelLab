@@ -15,13 +15,13 @@ The complete intended state sequence is:
 - **DESIGN_LOCKED:** an explicitly confirmed candidate and frozen Design Manifest version are the active design authority. Unlocking explicitly returns the project to `REFINING`; a later lock may select a different current-round candidate without destroying prior lock history. A locked creature may seed one or more persisted descendants, each beginning in `CONCEPT` with an immutable `EVOLUTION` round.
 - **REFERENCE_BUILDING:** one or more project-mandatory canonical views remain unapproved for the active design lock. Requests, imports, and rejected/unapproved attempts remain immutable history.
 - **REFERENCE_APPROVED:** the active locked design plus every configured mandatory reference type have an explicit approval tied to that same design lock. Optional views may still be requested without closing the animation gate.
-- **ANIMATING:** key poses, then intermediates, are being built. Planned for Milestone 6.
-- **ANIMATION_REVIEW:** frame validation and repairs are in progress.
+- **ANIMATING:** a reference-gated animation has a saved key-pose or intermediate handoff and is awaiting real frame imports.
+- **ANIMATION_REVIEW:** imported frames, continuity warnings, order, roles, durations, notes, and non-destructive repair revisions are being reviewed. Explicitly approved animations remain here until export.
 - **GAME_READY:** required designs, references, and animations have approved exports.
 
 The application must never skip a gated state silently. Unlocking, locking, reference approval, animation approval, and export require explicit confirmation in the milestone that implements them.
 
-## Rules enforced through Milestone 5
+## Rules enforced through Milestone 6
 
 - A concept round can only be created from `DRAFT`.
 - A concept round is immutable and saves its own prompt/context files.
@@ -64,3 +64,10 @@ The application must never skip a gated state silently. Unlocking, locking, refe
 - Approved references are never silently replaced. A later unlock/relock preserves them as stale history, and they no longer satisfy the new lock's mandatory set.
 - Project settings define an ordered unique mandatory-reference set and always include `LOCKED_DESIGN`. The default adds strict side profile, silhouette, and colour/material.
 - `REFERENCE_APPROVED` is derived only when every mandatory type is satisfied for the active lock. Changing project rules re-evaluates locked creatures; animation remains gated while any mandatory type is missing.
+- Animation creation requires `animationGateSatisfied` for the active design lock and permanently records that exact lock ID, frozen manifest context, canvas, expected frame count, deterministic key-pose prompt, and prompt/context paths.
+- PNG frames are decoded and inspected before persistence. Exact SHA-256 duplicates within an animation are rejected; perceptual similarity and adjacent center/bounds/opacity shifts are warnings for human review.
+- Imported frame originals and thumbnails have separate UUID paths. Reordering changes only active numbering, and removal is soft deletion after explicit confirmation; neither operation deletes original image files.
+- Playback order contains every active frame exactly once. Roles are KEY_POSE, INTERMEDIATE, REPAIR, or HOLD, and FPS, looping, per-frame duration, notes, warnings, and repair flags persist.
+- Intermediate prompts require at least two active key poses and use them as fixed endpoints while preserving the frozen identity and production constraints.
+- Repair prompts require a marked frame and request exactly one targeted replacement. The replacement is a new active revision that points to the old frame; the old row and original bytes remain preserved.
+- Animation approval requires explicit confirmation, the exact current design lock and mandatory reference set, exactly the configured active-frame count, and no pending repair flags.

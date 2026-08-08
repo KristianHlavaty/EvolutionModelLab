@@ -29,20 +29,32 @@ import {
 } from "@eml/prompt-builder";
 import {
   candidateFeedbackInputSchema,
+  type AnimationSettingsInput,
+  type ApproveAnimationInput,
   type ApproveReferenceInput,
   type CandidateFeedbackInput,
   type CreateDescendantInput,
   type CreateReferenceInput,
+  type CreateAnimationInput,
   createCreatureInputSchema,
   type ContactSheetLayoutInput,
   type CandidateSource,
   type CreateCreatureInput,
   type DesignManifestInput,
   type ProjectReferenceSettingsInput,
+  type RepairPromptInput,
+  type ReorderAnimationFramesInput,
+  type UpdateAnimationFrameInput,
+  type FrameRole,
 } from "@eml/shared";
 import { and, asc, desc, eq, isNull, ne } from "drizzle-orm";
 
 import { AppError } from "./errors.js";
+import {
+  AnimationWorkflow,
+  type AnimationFileInput,
+  type AnimationView,
+} from "./animation.js";
 import {
   DesignWorkflow,
   type CreatureDesignOverview,
@@ -326,6 +338,7 @@ export class EvolutionModelLabService {
   private readonly design: DesignWorkflow;
   private readonly evolution: EvolutionWorkflow;
   private readonly references: ReferenceWorkflow;
+  private readonly animation: AnimationWorkflow;
   private readonly limits: ImageLimits;
   private readonly maximumFilesPerImport: number;
 
@@ -376,6 +389,13 @@ export class EvolutionModelLabService {
       this.repositoryRoot,
       this.workspaceRoot,
       this.limits,
+    );
+    this.animation = new AnimationWorkflow(
+      this.database.db,
+      this.repositoryRoot,
+      this.workspaceRoot,
+      this.limits,
+      this.references,
     );
   }
 
@@ -2068,6 +2088,103 @@ export class EvolutionModelLabService {
     input: ProjectReferenceSettingsInput,
   ): ProjectReferenceSettingsView {
     return this.references.updateSettings(input);
+  }
+
+  listAnimations(creatureId: string): AnimationView[] {
+    return this.animation.list(creatureId);
+  }
+
+  getAnimation(animationId: string): AnimationView {
+    return this.animation.get(animationId);
+  }
+
+  createAnimation(
+    creatureId: string,
+    input: CreateAnimationInput,
+  ): Promise<AnimationView> {
+    return this.animation.create(creatureId, input);
+  }
+
+  updateAnimationSettings(
+    animationId: string,
+    input: AnimationSettingsInput,
+  ): AnimationView {
+    return this.animation.updateSettings(animationId, input);
+  }
+
+  importAnimationFrames(
+    animationId: string,
+    files: AnimationFileInput[],
+    frameRole: FrameRole,
+    source: string,
+    actor: string,
+  ): Promise<AnimationView> {
+    return this.animation.importFrames(
+      animationId,
+      files,
+      frameRole,
+      source,
+      actor,
+    );
+  }
+
+  reorderAnimationFrames(
+    animationId: string,
+    input: ReorderAnimationFramesInput,
+  ): AnimationView {
+    return this.animation.reorder(animationId, input);
+  }
+
+  updateAnimationFrame(
+    frameId: string,
+    input: UpdateAnimationFrameInput,
+  ): AnimationView {
+    return this.animation.updateFrame(frameId, input);
+  }
+
+  deleteAnimationFrame(
+    frameId: string,
+    confirmed: boolean,
+    actor: string,
+  ): AnimationView {
+    return this.animation.deleteFrame(frameId, confirmed, actor);
+  }
+
+  createIntermediateAnimationPrompt(
+    animationId: string,
+    actor: string,
+  ): Promise<AnimationView> {
+    return this.animation.createIntermediatePrompt(animationId, actor);
+  }
+
+  createAnimationRepairPrompt(
+    frameId: string,
+    input: RepairPromptInput,
+  ): Promise<AnimationView> {
+    return this.animation.createRepairPrompt(frameId, input);
+  }
+
+  replaceAnimationFrame(
+    frameId: string,
+    file: AnimationFileInput,
+    notes: string,
+    actor: string,
+  ): Promise<AnimationView> {
+    return this.animation.replaceFrame(frameId, file, notes, actor);
+  }
+
+  approveAnimation(
+    animationId: string,
+    input: ApproveAnimationInput,
+  ): AnimationView {
+    return this.animation.approve(animationId, input);
+  }
+
+  getAnimationFrameMedia(
+    frameId: string,
+    kind: "image" | "thumbnail",
+  ): { path: string; mimeType: string } {
+    return this.animation.getMedia(frameId, kind);
   }
 
   setCandidateRejected(candidateId: string, rejected: boolean): void {

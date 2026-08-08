@@ -1,11 +1,57 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  buildAnimationIntermediatePrompt,
+  buildAnimationKeyPosePrompt,
+  buildAnimationRepairPrompt,
   buildConceptPrompt,
   buildEvolutionPrompt,
   buildReferencePrompt,
   buildRefinementPrompt,
 } from "./index.js";
+
+const animationInput = {
+  displayName: "Dunkleosteus",
+  animationName: "Cruising swim",
+  animationType: "SWIM",
+  lockedCandidateId: "locked-id",
+  manifestVersion: 3,
+  immutableFeatures: ["Broad armour plates"],
+  forbiddenFeatures: ["No horns"],
+  animationNotes: "Keep tail beats economical.",
+  frameCount: 8,
+  canvasWidth: 1024,
+  canvasHeight: 1024,
+  facing: "right",
+  anchorX: 512,
+  anchorY: 900,
+};
+
+describe("animation prompts", () => {
+  it("builds deterministic key-pose and intermediate handoffs", () => {
+    const key = buildAnimationKeyPosePrompt(animationInput);
+    const intermediate = buildAnimationIntermediatePrompt(animationInput);
+    expect(key).toBe(buildAnimationKeyPosePrompt(animationInput));
+    expect(key).toContain("8 ordered key poses");
+    expect(key).toContain("Do not introduce anatomy drift");
+    expect(intermediate).toContain(
+      "approved key poses as fixed adjacent endpoints",
+    );
+    expect(intermediate).toContain("only the missing intermediate frames");
+  });
+
+  it("limits repair output to one targeted replacement", () => {
+    const repair = buildAnimationRepairPrompt({
+      ...animationInput,
+      frameNumber: 4,
+      brokenFrameId: "frame-id",
+      repairInstructions: "Restore the missing lower fin.",
+    });
+    expect(repair).toContain("Restore the missing lower fin.");
+    expect(repair).toContain("Return exactly one transparent PNG replacement");
+    expect(repair).toContain("Do not make unrelated changes");
+  });
+});
 
 describe("buildConceptPrompt", () => {
   it("produces deterministic concept instructions from stored inputs", () => {

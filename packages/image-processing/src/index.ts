@@ -20,6 +20,22 @@ export interface InspectedPng {
   thumbnail: Buffer;
 }
 
+export interface AnimationPngMetrics {
+  boundingBoxX: number;
+  boundingBoxY: number;
+  boundingBoxWidth: number;
+  boundingBoxHeight: number;
+  centerX: number;
+  centerY: number;
+  opaquePixelCount: number;
+  touchesCanvasEdge: boolean;
+  perceptualHash: string;
+}
+
+export interface InspectedAnimationPng extends InspectedPng {
+  metrics: AnimationPngMetrics;
+}
+
 export interface ContactSheetLayout {
   rows: number;
   columns: number;
@@ -135,6 +151,80 @@ export async function inspectPng(
       "INVALID_PNG",
     );
   }
+}
+
+export async function inspectAnimationPng(
+  buffer: Buffer,
+  limits: ImageLimits,
+): Promise<InspectedAnimationPng> {
+  const inspected = await inspectPng(buffer, limits);
+  const { data, info } = await sharp(buffer, { failOn: "error" })
+    .ensureAlpha()
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+  let minX = info.width;
+  let minY = info.height;
+  let maxX = -1;
+  let maxY = -1;
+  let opaquePixelCount = 0;
+  let xTotal = 0;
+  let yTotal = 0;
+  let touchesCanvasEdge = false;
+  for (let y = 0; y < info.height; y += 1) {
+    for (let x = 0; x < info.width; x += 1) {
+      const alpha = data[(y * info.width + x) * 4 + 3] ?? 0;
+      if (alpha === 0) continue;
+      opaquePixelCount += 1;
+      xTotal += x;
+      yTotal += y;
+      minX = Math.min(minX, x);
+      minY = Math.min(minY, y);
+      maxX = Math.max(maxX, x);
+      maxY = Math.max(maxY, y);
+      if (x === 0 || y === 0 || x === info.width - 1 || y === info.height - 1) {
+        touchesCanvasEdge = true;
+      }
+    }
+  }
+  const sample = await sharp(buffer, { failOn: "error" })
+    .flatten({ background: { r: 0, g: 0, b: 0 } })
+    .resize(8, 8, { fit: "fill" })
+    .greyscale()
+    .raw()
+    .toBuffer();
+  const average =
+    sample.reduce((total, value) => total + value, 0) / sample.length;
+  let bits = 0n;
+  for (const value of sample) {
+    bits = (bits << 1n) | (value >= average ? 1n : 0n);
+  }
+  return {
+    ...inspected,
+    metrics: {
+      boundingBoxX: opaquePixelCount > 0 ? minX : 0,
+      boundingBoxY: opaquePixelCount > 0 ? minY : 0,
+      boundingBoxWidth: opaquePixelCount > 0 ? maxX - minX + 1 : 0,
+      boundingBoxHeight: opaquePixelCount > 0 ? maxY - minY + 1 : 0,
+      centerX: opaquePixelCount > 0 ? xTotal / opaquePixelCount : 0,
+      centerY: opaquePixelCount > 0 ? yTotal / opaquePixelCount : 0,
+      opaquePixelCount,
+      touchesCanvasEdge,
+      perceptualHash: bits.toString(16).padStart(16, "0"),
+    },
+  };
+}
+
+export function perceptualHashDistance(left: string, right: string): number {
+  if (!/^[0-9a-f]{16}$/i.test(left) || !/^[0-9a-f]{16}$/i.test(right)) {
+    return 64;
+  }
+  let different = BigInt(`0x${left}`) ^ BigInt(`0x${right}`);
+  let distance = 0;
+  while (different > 0n) {
+    distance += Number(different & 1n);
+    different >>= 1n;
+  }
+  return distance;
 }
 
 export function calculateCropRectangles(
