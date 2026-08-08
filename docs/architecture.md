@@ -4,16 +4,16 @@
 
 Evolution Model Lab is a pnpm TypeScript monorepo with strict module ownership:
 
-- `apps/web` owns browser rendering, routing, drag/drop, file selection, clipboard events, structured feedback and manifest editing, comparison controls, contact-sheet preview, confirmation dialogs, history presentation, and user-facing errors.
+- `apps/web` owns browser rendering, routing, drag/drop, file selection, clipboard events, structured feedback and manifest editing, candidate and lineage comparison, evolution-tree presentation, ordered mutation editing, contact-sheet preview, confirmation dialogs, history presentation, and user-facing errors.
 - `apps/server` owns localhost HTTP transport, multipart parsing, Zod boundary validation, and HTTP error mapping.
-- `packages/core` owns creature, round, manifest, lock/unlock, history, candidate-protection, filesystem orchestration, and service-level rules.
+- `packages/core` owns creature, round, manifest, lock/unlock, evolution lineage, mutation, history, candidate-protection, filesystem orchestration, and service-level rules.
 - `packages/database` owns the Drizzle schema, committed SQLite migrations, connection pragmas, and database lifecycle.
 - `packages/prompt-builder` owns deterministic prompt text.
 - `packages/image-processing` owns content-based PNG validation, SHA-256 hashing, image metadata, deterministic crop geometry, derived crops, and thumbnails.
 - `apps/mcp-server` is reserved for the Milestone 8 adapter and will call `packages/core`; it must not reimplement rules.
 - `packages/sprite-exporter` is reserved for Milestone 7.
 
-## Data flow through Milestone 3
+## Data flow through Milestone 4
 
 ### REST flow
 
@@ -21,7 +21,7 @@ The React page submits a Zod-shaped request or multipart file set to Express. Ex
 
 ### Database ownership
 
-SQLite is authoritative for searchable state. `packages/database/drizzle/0000_milestone_one.sql` creates creature projects, generation rounds, candidates, candidate feedback, history events, and project settings. `0001_milestone_two.sql` additively introduces frozen feedback snapshots, contact-sheet imports, and per-candidate crop provenance. `0002_milestone_three.sql` additively introduces the current Design Manifest, immutable manifest versions, design-lock records, richer history ownership fields, and indexes for current/versioned lookups. Existing project settings are backfilled into version-zero manifest drafts without treating untouched defaults as explicit owner approval.
+SQLite is authoritative for searchable state. `packages/database/drizzle/0000_milestone_one.sql` creates creature projects, generation rounds, candidates, candidate feedback, history events, and project settings. `0001_milestone_two.sql` additively introduces frozen feedback snapshots, contact-sheet imports, and per-candidate crop provenance. `0002_milestone_three.sql` additively introduces the current Design Manifest, immutable manifest versions, design-lock records, richer history ownership fields, and indexes for current/versioned lookups. `0003_milestone_four.sql` adds guarded lineage/source indexes and ordered `evolution_mutations` rows that point to both parent and child projects. Existing project settings are backfilled into version-zero manifest drafts without treating untouched defaults as explicit owner approval.
 
 The default database is `data/evolution-model-lab.db`. WAL mode, foreign keys, a busy timeout, and committed migrations are applied on startup.
 
@@ -52,6 +52,14 @@ The web editor sends a complete typed manifest draft to REST. Core validates lis
 Lock requests contain confirmation acknowledgements, not trusted candidate metadata. Core reloads the selected current-round candidate, verifies creature ownership and protected state, resolves its path against the configured workspace, revalidates PNG bytes and SHA-256, stages the active copy and manifest snapshot exclusively, and then commits the lock plus history transaction. On failure, only files created by that attempt are removed. Unlocking preserves all filesystem artifacts and history while clearing the active relationship. A relock first archives the previous active copy and marks its lock record superseded, then installs the new verified copy.
 
 REST exposes only transport-shaped manifest, lock, unlock, history, media, and protected delete/reject endpoints. All workflow decisions remain in `packages/core`, so a later MCP adapter can reuse exactly the same gates.
+
+### Evolution flow
+
+The web lineage route reads a flat, persistence-backed tree from core and groups it visually by generation without making layout authoritative. Descendant creation accepts only identity fields, a brief, and an ordered mutation list. Core reloads the proposed parent and requires one active authoritative lock whose candidate matches the project relationship. It guards and rereads the active locked-reference path, decodes the PNG, and verifies its SHA-256 before any descendant is staged.
+
+Core derives inherited, preferred, and forbidden constraints from the approved ancestor manifest; it does not copy or invent anatomy in the child's editable manifest. A successful transaction creates the child, its parent link and generation number, one immutable `EVOLUTION` round linked to the source creature and parent candidate, ordered mutation rows, and history for both projects. The deterministic prompt and JSON context are staged under `round-001-evolution/`. A failed operation removes only the new child directory when that directory was created by the operation. Parent originals, locks, rounds, and manifest history are never modified.
+
+Evolution candidate imports, selection, and design locking reuse the same validated candidate and lock services as concept/refinement work. Once a child is locked it may seed another generation. Tree reads, mutation reads, and comparison state are derived from persisted relationships and survive process restart.
 
 ## Future flows
 

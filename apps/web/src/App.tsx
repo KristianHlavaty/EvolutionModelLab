@@ -8,6 +8,7 @@ import {
   Dna,
   FlaskConical,
   FolderOpen,
+  GitBranch,
   History,
   ImagePlus,
   LayoutDashboard,
@@ -35,6 +36,7 @@ import {
   Navigate,
   Route,
   Routes,
+  useLocation,
   useNavigate,
   useParams,
 } from "react-router-dom";
@@ -45,6 +47,7 @@ import {
   DesignHistoryPage,
   ManifestPage,
 } from "./MilestoneThree.tsx";
+import { EvolutionPage } from "./MilestoneFour.tsx";
 import { PromptHistoryPage, RoundWorkspacePage } from "./MilestoneTwo.tsx";
 import type { Candidate, Creature, DashboardData, Round } from "./types.ts";
 
@@ -89,9 +92,27 @@ function useRemote<T>(
 }
 
 function AppShell({ children }: { children: ReactNode }) {
+  const { pathname } = useLocation();
+  const inFocusedEvolution = /^\/creatures\/[^/]+\/evolution$/.test(pathname);
   const primary = [
-    { to: "/", label: "Overview", icon: LayoutDashboard },
-    { to: "/creatures", label: "Creatures", icon: Dna },
+    {
+      to: "/",
+      label: "Overview",
+      icon: LayoutDashboard,
+      active: pathname === "/",
+    },
+    {
+      to: "/creatures",
+      label: "Creatures",
+      icon: Dna,
+      active: pathname.startsWith("/creatures") && !inFocusedEvolution,
+    },
+    {
+      to: "/evolution",
+      label: "Evolution",
+      icon: GitBranch,
+      active: pathname === "/evolution" || inFocusedEvolution,
+    },
   ];
   return (
     <div className="app-shell">
@@ -107,8 +128,13 @@ function AppShell({ children }: { children: ReactNode }) {
         </Link>
         <nav className="main-nav" aria-label="Main navigation">
           <p className="nav-label">Workspace</p>
-          {primary.map(({ to, label, icon: Icon }) => (
-            <NavLink key={to} to={to} end={to === "/"}>
+          {primary.map(({ to, label, icon: Icon, active }) => (
+            <NavLink
+              key={to}
+              to={to}
+              end={to === "/"}
+              className={() => (active ? "active" : undefined)}
+            >
               <Icon size={18} /> {label}
             </NavLink>
           ))}
@@ -352,6 +378,7 @@ function CreaturesPage() {
             <option value="CONCEPT">Concept</option>
             <option value="CANDIDATE_SELECTED">Candidate selected</option>
             <option value="REFINING">Refining</option>
+            <option value="DESIGN_LOCKED">Design locked</option>
           </select>
         </label>
       </div>
@@ -398,6 +425,9 @@ function CreatureCard({ creature }: { creature: Creature }) {
       <div className="creature-card-body">
         <p className="eyebrow">
           {creature.roundCount} {creature.roundCount === 1 ? "round" : "rounds"}
+          {creature.evolutionaryGeneration > 0 && (
+            <> · Generation {creature.evolutionaryGeneration}</>
+          )}
         </p>
         <h2>{creature.displayName}</h2>
         <p className="scientific">
@@ -579,6 +609,12 @@ function CreatureDetailPage() {
                 <History size={16} /> Prompt history
               </Link>
             )}
+            <Link
+              className="button secondary"
+              to={`/creatures/${creature.id}/evolution`}
+            >
+              <GitBranch size={16} /> Lineage
+            </Link>
             <span
               className={`status-pill large status-${creature.status.toLowerCase()}`}
             >
@@ -1061,6 +1097,7 @@ export function App() {
       <Routes>
         <Route path="/" element={<DashboardPage />} />
         <Route path="/creatures" element={<CreaturesPage />} />
+        <Route path="/evolution" element={<EvolutionPage />} />
         <Route path="/creatures/new" element={<NewCreaturePage />} />
         <Route path="/creatures/:creatureId" element={<CreatureDetailPage />} />
         <Route
@@ -1073,9 +1110,7 @@ export function App() {
         />
         <Route
           path="/creatures/:creatureId/evolution"
-          element={
-            <FutureFeaturePage title="Evolution tree" milestone="Milestone 4" />
-          }
+          element={<EvolutionPage />}
         />
         <Route
           path="/creatures/:creatureId/manifest"

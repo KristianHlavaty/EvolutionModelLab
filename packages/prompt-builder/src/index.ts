@@ -36,6 +36,39 @@ export interface RefinementPromptInput {
   };
 }
 
+export interface EvolutionPromptInput {
+  displayName: string;
+  scientificName?: string | null;
+  generationBrief: string;
+  evolutionaryGeneration: number;
+  parent: {
+    id: string;
+    displayName: string;
+    scientificName?: string | null;
+    lockedCandidateId: string;
+    lockedCandidateNumber: number;
+  };
+  inheritedTraits: string[];
+  preferredTraits: string[];
+  forbiddenTraits: string[];
+  mutations: Array<{
+    category: string;
+    description: string;
+    intensity?: number | undefined;
+    inherited: boolean;
+  }>;
+  constraints: {
+    camera: string;
+    facing: string;
+    canvasWidth: number;
+    canvasHeight: number;
+    transparency: boolean;
+    lighting: string;
+    style: string;
+  };
+  candidateCount?: number;
+}
+
 function identity(input: {
   displayName: string;
   scientificName?: string | null;
@@ -126,5 +159,58 @@ export function buildRefinementPrompt(input: RefinementPromptInput): string {
     "Do not create an animation or animation frames.",
     "Do not perform unrelated anatomy redesigns or introduce unrequested body structures.",
     "Return separate PNGs or one clearly separated contact sheet with no overlaps.",
+  ].join("\n");
+}
+
+export function buildEvolutionPrompt(input: EvolutionPromptInput): string {
+  const candidateCount = input.candidateCount ?? 10;
+  const mutationLines = input.mutations.flatMap((mutation, index) => [
+    `${index + 1}. [${mutation.category}] ${mutation.description}`,
+    `   Intensity: ${mutation.intensity ?? "not specified"}/5; ${
+      mutation.inherited ? "inherited adaptation" : "new descendant mutation"
+    }`,
+  ]);
+  return [
+    "# Evolution Model Lab — Evolution Descendant Request",
+    "",
+    `Descendant: ${identity(input)}`,
+    `Evolutionary generation: ${input.evolutionaryGeneration}`,
+    "Generation round: 1",
+    "Task type: EVOLUTION",
+    "Workflow state: CONCEPT",
+    `Approved ancestor: ${identity(input.parent)} (${input.parent.id})`,
+    `Ancestor locked candidate: ${input.parent.lockedCandidateNumber} (${input.parent.lockedCandidateId})`,
+    "",
+    "## Descendant generation brief",
+    input.generationBrief.trim(),
+    "",
+    ...feedbackSection("Inherited immutable traits", input.inheritedTraits),
+    ...feedbackSection("Preferred inherited traits", input.preferredTraits),
+    ...feedbackSection("Forbidden traits", input.forbiddenTraits),
+    "## Stored evolutionary mutations",
+    ...(mutationLines.length > 0
+      ? mutationLines
+      : ["- No evolutionary mutations recorded."]),
+    "",
+    "## Fixed production constraints",
+    `Camera: ${input.constraints.camera}`,
+    `Facing: ${input.constraints.facing}`,
+    `Canvas: ${input.constraints.canvasWidth} × ${input.constraints.canvasHeight} pixels`,
+    `Transparency: ${
+      input.constraints.transparency
+        ? "transparent background required"
+        : "background may be opaque"
+    }`,
+    `Lighting: ${input.constraints.lighting}`,
+    `Style: ${input.constraints.style}`,
+    "",
+    "## Required output",
+    "Use the attached locked ancestor design as the exact evolutionary identity reference.",
+    `Create ${candidateCount} visibly distinct candidate descendants that remain recognizably related to the approved ancestor.`,
+    "Preserve every inherited immutable trait and introduce only the stored evolutionary mutations.",
+    "Do not turn the candidates into unrelated species or redesign unrelated anatomy.",
+    "Keep camera, facing, canvas, scale, transparency, palette logic, material treatment, and lighting consistent.",
+    "Do not create an animation or animation frames.",
+    "Return separate PNGs or one clean, clearly numbered contact sheet with no overlaps.",
   ].join("\n");
 }

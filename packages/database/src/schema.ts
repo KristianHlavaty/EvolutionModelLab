@@ -282,6 +282,31 @@ export const designLocks = sqliteTable(
   ],
 );
 
+export const evolutionMutations = sqliteTable(
+  "evolution_mutations",
+  {
+    id: text("id").primaryKey(),
+    childCreatureId: text("child_creature_id")
+      .notNull()
+      .references(() => creatureProjects.id, { onDelete: "restrict" }),
+    parentCreatureId: text("parent_creature_id")
+      .notNull()
+      .references(() => creatureProjects.id, { onDelete: "restrict" }),
+    category: text("category").notNull(),
+    description: text("description").notNull(),
+    sortOrder: integer("sort_order").notNull(),
+    intensity: integer("intensity"),
+    inherited: integer("inherited", { mode: "boolean" })
+      .notNull()
+      .default(false),
+    createdAt: text("created_at").notNull(),
+  },
+  (table) => [
+    index("evolution_mutations_child_idx").on(table.childCreatureId),
+    index("evolution_mutations_parent_idx").on(table.parentCreatureId),
+  ],
+);
+
 export const projectSettings = sqliteTable("project_settings", {
   id: text("id").primaryKey(),
   workspaceRoot: text("workspace_root").notNull(),

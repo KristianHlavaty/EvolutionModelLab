@@ -856,7 +856,9 @@ export function RoundWorkspacePage() {
             <p>
               {round.roundType === "REFINEMENT"
                 ? "Attach the selected parent image, then use this frozen refinement prompt."
-                : "Use this saved concept prompt without a parent image."}
+                : round.roundType === "EVOLUTION"
+                  ? "Attach the approved ancestor's locked design, then use this frozen evolution prompt."
+                  : "Use this saved concept prompt without a parent image."}
             </p>
           </div>
           <button

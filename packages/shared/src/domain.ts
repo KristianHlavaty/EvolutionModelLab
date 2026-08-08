@@ -36,3 +36,19 @@ export const candidateSources = [
 ] as const;
 
 export type CandidateSource = (typeof candidateSources)[number];
+
+export const evolutionMutationCategories = [
+  "ANATOMY",
+  "ARMOUR",
+  "LOCOMOTION",
+  "FEEDING",
+  "SENSORY",
+  "SIZE",
+  "COLOUR",
+  "HABITAT",
+  "BEHAVIOUR",
+  "OTHER",
+] as const;
+
+export type EvolutionMutationCategory =
+  (typeof evolutionMutationCategories)[number];

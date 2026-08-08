@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { buildConceptPrompt, buildRefinementPrompt } from "./index.js";
+import {
+  buildConceptPrompt,
+  buildEvolutionPrompt,
+  buildRefinementPrompt,
+} from "./index.js";
 
 describe("buildConceptPrompt", () => {
   it("produces deterministic concept instructions from stored inputs", () => {
@@ -65,5 +69,59 @@ describe("buildRefinementPrompt", () => {
     expect(first).toContain("Do not create an animation");
     expect(first).toContain("Do not perform unrelated anatomy redesigns");
     expect(first).toContain("Canvas: 1024 × 1024 pixels");
+  });
+});
+
+describe("buildEvolutionPrompt", () => {
+  it("preserves ancestor identity and ordered mutations deterministically", () => {
+    const input = {
+      displayName: "Reef Dunkleosteus",
+      generationBrief: "A shallow-water descendant adapted to reef pursuit.",
+      evolutionaryGeneration: 2,
+      parent: {
+        id: "ancestor-id",
+        displayName: "Dunkleosteus",
+        scientificName: "Dunkleosteus terrelli",
+        lockedCandidateId: "locked-id",
+        lockedCandidateNumber: 4,
+      },
+      inheritedTraits: ["Armoured skull", "Blade-like jaw plates"],
+      preferredTraits: ["Ochre plate edges"],
+      forbiddenTraits: ["No horns"],
+      mutations: [
+        {
+          category: "LOCOMOTION",
+          description: "Shorter turning radius",
+          intensity: 3,
+          inherited: false,
+        },
+        {
+          category: "COLOUR",
+          description: "Reef-breaking mottled palette",
+          inherited: false,
+        },
+      ],
+      constraints: {
+        camera: "orthographic side view",
+        facing: "right",
+        canvasWidth: 1024,
+        canvasHeight: 1024,
+        transparency: true,
+        lighting: "neutral studio lighting",
+        style: "match the locked ancestor",
+      },
+      candidateCount: 10,
+    };
+    const prompt = buildEvolutionPrompt(input);
+
+    expect(prompt).toBe(buildEvolutionPrompt(input));
+    expect(prompt).toContain("Approved ancestor: Dunkleosteus");
+    expect(prompt).toContain("Ancestor locked candidate: 4 (locked-id)");
+    expect(prompt.indexOf("Shorter turning radius")).toBeLessThan(
+      prompt.indexOf("Reef-breaking mottled palette"),
+    );
+    expect(prompt).toContain("Preserve every inherited immutable trait");
+    expect(prompt).toContain("Do not create an animation");
+    expect(prompt).toContain("10 visibly distinct candidate descendants");
   });
 });

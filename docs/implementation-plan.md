@@ -12,14 +12,14 @@
 
 Evolution Model Lab is a local-first creature design workspace. ChatGPT supplies images through ordinary conversations; this application persists project state, builds prompts, imports and validates user-provided images, and maintains recoverable history. It does not call paid image-generation APIs and never pretends to generate images.
 
-This pass implements **Milestone 3 only**, building on the completed Milestone 2 refinement workflow. Later workflow surfaces may remain visible as clearly disabled navigation, but their actions are not represented as working.
+The current release implements **Milestone 4**, building on the completed design-lock workflow. Evolution is enabled only where its approved-parent gate is enforced; canonical references, animation, export, MCP, and ChatGPT plugin surfaces remain disabled or clearly documented as later work.
 
 ## Module boundaries
 
-- `apps/web`: React/Vite interface, routing, uploads, numbered gallery, feedback/manifest editors, comparison workspace, lock/unlock confirmations, lock/history presentation, prompt history, and contact-sheet preview/confirmation.
+- `apps/web`: React/Vite interface, routing, uploads, numbered gallery, feedback/manifest/mutation editors, candidate and lineage comparison, persisted evolution tree, lock/unlock confirmations, lock/history presentation, prompt history, and contact-sheet preview/confirmation.
 - `apps/server`: localhost Express transport, request parsing, error mapping, and exact guarded media responses.
-- `apps/mcp-server`: reserved application boundary for the later Streamable HTTP MCP server; no MCP SDK is installed through Milestone 2.
-- `packages/core`: reusable workflow/application services, including manifest versioning and design-lock rules, used by future REST and MCP adapters.
+- `apps/mcp-server`: reserved application boundary for the later Streamable HTTP MCP server; no MCP SDK is installed through Milestone 4.
+- `packages/core`: reusable workflow/application services, including manifest versioning, design-lock rules, approved-parent evolution branching, lineage reads, and ordered mutation persistence, used by REST and future MCP adapters.
 - `packages/database`: SQLite connection, Drizzle schema, migrations, and database lifecycle.
 - `packages/shared`: Zod request/response contracts and shared domain constants.
 - `packages/image-processing`: PNG inspection, SHA-256 hashing, deterministic grid geometry, derived crop creation, and thumbnails.
@@ -62,6 +62,16 @@ An upgrade regression test constructs a database from the committed Milestone 1 
 - candidate, round, manifest-version, and actor fields on append-only history events.
 
 Existing projects receive a version-zero draft derived from their project settings. Those inherited values remain marked as project defaults until explicitly edited. The first successful lock freezes version 1; later confirmed edits and relocks advance monotonically and never overwrite a frozen row or numbered file.
+
+## Milestone 4 additive schema
+
+`0003_milestone_four.sql` preserves every earlier project while adding:
+
+- an index for `creature_projects.parent_creature_id`, making persisted parent/child traversal independent of the UI layout;
+- an index for `generation_rounds.source_creature_id`, supporting immutable evolution-round ancestry;
+- `evolution_mutations`, with restrictive parent/child foreign keys plus stored category, description, explicit priority, optional intensity, inherited/new designation, and creation time.
+
+Existing creatures remain generation zero roots. A descendant transaction writes its parent relationship, generation, source creature/candidate round lineage, mutations, and two-sided history together. No parent rows or files are rewritten.
 
 ## Filesystem ownership and safety
 
@@ -106,7 +116,7 @@ Existing projects receive a version-zero draft derived from their project settin
 | 1         | Repository and persisted concept vertical slice      | Completed |
 | 2         | Feedback, refinement, prompt history, contact sheets | Completed |
 | 3         | Design lock, manifest, history expansion             | Completed |
-| 4         | Evolution lineage and mutations                      | Pending   |
+| 4         | Evolution lineage and mutations                      | Completed |
 | 5         | Canonical references and approval gates              | Pending   |
 | 6         | Animation Lab and repair workflow                    | Pending   |
 | 7         | Validation and game-ready export                     | Pending   |
@@ -194,9 +204,41 @@ The Milestone 3 Playwright workflow creates concept and refinement rounds, edits
 
 Manual in-app browser QA reviewed the resulting `DESIGN_LOCKED` creature, opened and cancelled the explicit unlock confirmation, verified persisted manifest order/provenance/production values, reviewed active and superseded lock history plus manifest freeze/archive events, and confirmed the locked preview decoded at its real 80×52 dimensions with no console warnings or errors. This pass exposed Express's default refusal to serve test media beneath a dot-prefixed directory; exact paths already guarded by core are now sent with `dotfiles: "allow"`, and the automated byte assertion covers the regression. The isolated manual-QA services were stopped afterward.
 
+## Milestone 4 acceptance criteria
+
+- [x] A descendant can be created only from a creature with one active authoritative design lock; selected, unlocked, missing, invalid, or hash-mismatched ancestor references are rejected.
+- [x] Descendants persist one parent ID, a monotonically increasing evolutionary generation, one immutable `EVOLUTION` round, the approved parent candidate, and one or more ordered mutation records.
+- [x] The deterministic evolution prompt includes the approved ancestor, inherited/preferred/forbidden manifest constraints, ordered mutation details, production constraints, ten outputs, and explicit no-animation/no-unrelated-anatomy rules.
+- [x] Descendant staging creates separate directories and never changes the parent's candidate original, locked reference, manifest snapshots, or immutable round history.
+- [x] Evolution rounds accept real PNG candidates through the existing validated import, selection, and lock services; a locked child can seed a later generation.
+- [x] The responsive evolution route renders persisted generations, parent/child links, thumbnails and lock state, direct descendants, inherited constraints, mutation details, and ancestor/descendant image comparison.
+- [x] The descendant editor supports ordered mutation categories, descriptions, intensity, inherited/new designation, insertion, removal, and priority movement without synthesizing child anatomy.
+- [x] Unit/integration tests cover gates, prompt/context artifacts, order, restart persistence, unchanged ancestor bytes, multiple generations, comparison, evolution imports, and reference-integrity rejection.
+- [x] Playwright covers parent manifest approval/lock, descendant creation, mutations, prompt content, child candidate import/selection/lock, lineage comparison, and reload persistence.
+
+## Milestone 4 test status
+
+Final verification on 2026-08-08:
+
+| Command                          | Result                                                                                                           |
+| -------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `corepack pnpm format:check`     | Passed; every matched file uses Prettier style                                                                   |
+| `corepack pnpm lint`             | Passed; 0 ESLint errors                                                                                          |
+| `corepack pnpm typecheck`        | Passed; packages, server, and web compile in strict mode                                                         |
+| `corepack pnpm test`             | Passed; 6 files and 26 Vitest unit/integration tests                                                             |
+| `corepack pnpm test:e2e`         | Passed; 3 complete Playwright concept/refinement, design-lock, and evolution workflows                           |
+| `corepack pnpm build`            | Passed; packages/server compiled and Vite transformed 1,677 modules                                              |
+| Manual primary workflow exercise | Passed; lineage, comparison, mutation editor, desktop/narrow layouts, persistence, and 0 console warnings/errors |
+
+The Milestone 4 Playwright workflow creates and approves a parent manifest, locks a real imported PNG, creates a descendant with two ordered mutations, verifies its parent relationship and generated evolution prompt, imports/selects/locks a descendant PNG, compares both generations, reloads, and confirms persisted lineage. The core suite additionally verifies missing/unlocked parent gates, reference hash integrity, immutable prompt/context artifacts, mutation order, unchanged ancestor bytes, restart persistence, and a locked grandchild branch.
+
+Manual in-app browser QA inspected a persisted three-root/two-generation tree, the focused ancestor/descendant comparison, inherited constraints, mutation details, and the descendant form at desktop and 700-pixel responsive widths. It found and corrected focused-lineage sidebar state plus previously unstyled descendant controls. The corrected page had no horizontal overflow and reported no browser console warnings or errors. Isolated QA services were stopped afterward.
+
 ## Known limitations
 
-- Evolution, canonical references, animation, export, MCP, and plugin skills remain deferred to their planned milestones. The Milestone 3 locked PNG is an authoritative design copy, not a Milestone 5 canonical reference set.
+- Canonical references, animation, export, MCP, and plugin skills remain deferred to their planned milestones. The locked PNG is an authoritative design copy, not a Milestone 5 canonical reference set.
+- Evolution is a strict single-parent tree. Hybrid/multiple-parent descent and cross-project mutation merging are not modeled.
+- Mutations are immutable after descendant creation in Milestone 4; corrections require a new descendant branch. Lineage comparison is side-by-side rather than a synchronized overlay.
 - Local history actor values are `LOCAL_USER` and `SYSTEM`; authentication and named-user attribution are not implemented.
 - The editable manifest begins at version 0. Frozen, immutable versions begin at `manifest-v001.json` on the first design lock.
 - Unlock preserves the last active reference file for audit/relock safety; it is archived only when a later lock installs a replacement.

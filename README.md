@@ -2,7 +2,7 @@
 
 Evolution Model Lab is a local-first workspace for AI-assisted creature design. It stores creature briefs, deterministic ChatGPT prompts, imported concept candidates, durable selection state, and recoverable history without calling an image-generation API.
 
-Milestone 3 is the current release. It adds an editable, persisted Design Manifest; immutable manifest versions; explicitly confirmed design locking and unlocking; protected lock dependencies; versioned locked-reference archives; and a creature-specific audit history. ChatGPT remains a manual handoff: the application builds and saves prompts but does not call an image-generation API.
+Milestone 4 is the current release. It adds a persisted multi-generation evolution tree, approved-parent gates, ordered mutation records, deterministic evolution prompts, descendant workspaces, and ancestor/descendant comparison. ChatGPT remains a manual handoff: the application builds and saves prompts but does not call an image-generation API.
 
 > Screenshot placeholder: screenshots will be captured after the visual-review workflow stabilizes.
 
@@ -50,7 +50,7 @@ corepack pnpm dev
 
 Open [http://127.0.0.1:5173](http://127.0.0.1:5173). The single `pnpm dev` command starts the Vite interface and localhost REST server together. Both services bind to `127.0.0.1` by default.
 
-## Concept, refinement, and design-lock workflow
+## Concept, design-lock, and evolution workflow
 
 1. Choose **New creature** and create `Dunkleosteus`.
 2. Enter a generation brief and create **Concept Round 1**.
@@ -68,6 +68,10 @@ Open [http://127.0.0.1:5173](http://127.0.0.1:5173). The single `pnpm dev` comma
 14. The selected original remains unchanged. A verified copy becomes `references/locked-design.png`, while the frozen manifest is written to a new numbered file under `history/manifests/`.
 15. Use **Unlock design** only after reviewing its confirmation. Unlocking returns the creature to refinement but preserves the active reference, frozen manifests, and history. A later relock archives the previous reference under `history/locked-designs/` before activating the new copy.
 16. Reloading or restarting preserves candidates, selection, feedback, prompts, contact-sheet provenance, manifest drafts/versions, lock state, and complete history in SQLite.
+17. Choose **Lineage** on a locked creature, then define a descendant with a new brief and one or more ordered mutations. An unlocked creature cannot seed a branch.
+18. The descendant starts with an immutable Evolution Round 1. Its saved prompt names the approved ancestor, preserves the ancestor's approved constraints, applies mutations in order, and explicitly forbids unrelated anatomy and animation.
+19. Use the evolution prompt with the approved locked ancestor image in ChatGPT, then import, select, and lock a real descendant PNG through the normal candidate workflow.
+20. Return to **Lineage** to compare the ancestor and descendant, inspect the stored mutations, and continue to later generations. Reloading or reopening the app preserves every parent/child relationship.
 
 ## Commands
 
@@ -80,7 +84,7 @@ pnpm format:check     # verify formatting
 pnpm lint             # ESLint
 pnpm typecheck        # strict TypeScript checks
 pnpm test             # Vitest unit/integration tests
-pnpm test:e2e         # Playwright workflow and design-lock vertical slices
+pnpm test:e2e         # Playwright concept, design-lock, and evolution slices
 pnpm build            # production compile/build check
 pnpm db:migrate       # apply committed Drizzle migrations
 pnpm db:generate      # generate a migration after an intentional schema change
@@ -105,4 +109,4 @@ When MCP is implemented, it will use the same `packages/core` application servic
 
 ## Current limitations
 
-Evolution, canonical reference-building, animation, exports, MCP, and plugin skills remain intentionally pending later milestones. Milestone 3's locked PNG is an authoritative design copy, not a Milestone 5 canonical reference set. Local history actors are recorded as `LOCAL_USER` or `SYSTEM`; authentication and named-user identity are not implemented. Contact-sheet import supports PNG grids with explicit rows, columns, outer margins, and horizontal/vertical gaps; it does not guess irregular cell boundaries. Comparison is scoped to two candidates in the open round. See [docs/implementation-plan.md](docs/implementation-plan.md) for exact status and limitations.
+Canonical reference-building, animation, exports, MCP, and plugin skills remain intentionally pending later milestones. A locked PNG is an authoritative design copy, not a Milestone 5 canonical reference set. Evolution currently models one approved parent per descendant; mutations are frozen when the descendant is created, and ancestor/descendant comparison is side-by-side. Local history actors are recorded as `LOCAL_USER` or `SYSTEM`; authentication and named-user identity are not implemented. Contact-sheet import supports PNG grids with explicit rows, columns, outer margins, and horizontal/vertical gaps; it does not guess irregular cell boundaries. See [docs/implementation-plan.md](docs/implementation-plan.md) for exact status and limitations.

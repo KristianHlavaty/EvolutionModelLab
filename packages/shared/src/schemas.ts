@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { candidateSources } from "./domain.js";
+import { candidateSources, evolutionMutationCategories } from "./domain.js";
 
 export const createCreatureInputSchema = z.object({
   displayName: z.string().trim().min(1, "Display name is required.").max(120),
@@ -19,6 +19,23 @@ export const createCreatureInputSchema = z.object({
 });
 
 export type CreateCreatureInput = z.input<typeof createCreatureInputSchema>;
+
+export const evolutionMutationInputSchema = z.object({
+  category: z.enum(evolutionMutationCategories),
+  description: z.string().trim().min(1).max(2_000),
+  intensity: z.coerce.number().int().min(1).max(5).optional(),
+  inherited: z.boolean().default(false),
+});
+
+export const createDescendantInputSchema = createCreatureInputSchema.extend({
+  mutations: z.array(evolutionMutationInputSchema).min(1).max(30),
+  actor: z.string().trim().min(1).max(120).default("LOCAL_USER"),
+});
+
+export type EvolutionMutationInput = z.infer<
+  typeof evolutionMutationInputSchema
+>;
+export type CreateDescendantInput = z.input<typeof createDescendantInputSchema>;
 
 export const createConceptRoundInputSchema = z.object({
   creatureId: z.uuid(),

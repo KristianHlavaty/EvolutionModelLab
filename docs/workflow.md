@@ -12,7 +12,7 @@ The complete intended state sequence is:
 - **CONCEPT:** Concept Round 1 exists. One to ten real PNG candidates may be imported.
 - **CANDIDATE_SELECTED:** exactly one active parent is selected in the current round. Ordered feedback may be saved for that parent and a refinement round may be created.
 - **REFINING:** a new immutable refinement round references the selected parent and a frozen feedback snapshot. Real PNG refinements may be imported, compared, selected for another iteration, or explicitly design-locked.
-- **DESIGN_LOCKED:** an explicitly confirmed candidate and frozen Design Manifest version are the active design authority. Unlocking explicitly returns the project to `REFINING`; a later lock may select a different current-round candidate without destroying prior lock history.
+- **DESIGN_LOCKED:** an explicitly confirmed candidate and frozen Design Manifest version are the active design authority. Unlocking explicitly returns the project to `REFINING`; a later lock may select a different current-round candidate without destroying prior lock history. A locked creature may seed one or more persisted descendants, each beginning in `CONCEPT` with an immutable `EVOLUTION` round.
 - **REFERENCE_BUILDING:** canonical views are being requested and reviewed one at a time. Planned for Milestone 5.
 - **REFERENCE_APPROVED:** configured mandatory references are approved.
 - **ANIMATING:** key poses, then intermediates, are being built. Planned for Milestone 6.
@@ -21,7 +21,7 @@ The complete intended state sequence is:
 
 The application must never skip a gated state silently. Unlocking, locking, reference approval, animation approval, and export require explicit confirmation in the milestone that implements them.
 
-## Rules enforced through Milestone 3
+## Rules enforced through Milestone 4
 
 - A concept round can only be created from `DRAFT`.
 - A concept round is immutable and saves its own prompt/context files.
@@ -45,3 +45,12 @@ The application must never skip a gated state silently. Unlocking, locking, refe
 - Imports do not replace the active locked design. Relocking explicitly archives the previous active reference before activating the new selected candidate.
 - Unlock requires explicit acknowledgement, preserves references and all history, clears the active locked candidate relationship, and returns the creature to `REFINING`.
 - Filesystem work for locking is staged with exclusive creation. A failed database transaction removes only newly staged files and leaves existing originals, references, and history untouched.
+- Descendant creation requires one active authoritative design lock whose candidate agrees with the parent project. A selected or historical candidate is insufficient.
+- Before branching, core resolves the locked reference inside the configured workspace, rereads and decodes the PNG, and rejects missing, invalid, or hash-mismatched bytes.
+- Every descendant has exactly one stored parent, a generation equal to its parent's generation plus one, an immutable Evolution Round 1, and one or more ordered mutation rows.
+- Mutation category, description, order, optional intensity, and inherited/new designation are frozen when the descendant is created.
+- Evolution prompts name the approved ancestor and parent candidate, preserve the approved ancestor manifest constraints, apply mutations in stored priority order, request ten images, and forbid animation, unrelated species changes, and unrequested anatomy.
+- The child Design Manifest starts with safe project defaults. Ancestor facts remain explicit evolution context; the application does not silently claim them as owner-approved child anatomy or biology.
+- Descendant staging creates a new exclusive creature directory. Failure cleanup is limited to that newly created directory and never targets the ancestor's originals, active reference, manifest snapshots, or history.
+- Evolution candidates use the same content-based PNG validation, duplicate detection, selection invariant, and design-lock gates as earlier rounds.
+- A locked descendant may seed another generation. The flat persisted lineage and ancestor/descendant comparison remain available after restart independently of the current UI layout.

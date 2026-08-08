@@ -102,6 +102,8 @@ export interface Creature {
   description: string;
   generationBrief: string;
   status: string;
+  parentCreatureId: string | null;
+  evolutionaryGeneration: number;
   currentRoundId: string | null;
   lockedCandidateId: string | null;
   createdAt: string;
@@ -208,4 +210,50 @@ export interface DashboardData {
     createdAt: string;
     entityId: string;
   }>;
+}
+
+export interface EvolutionMutation {
+  id: string;
+  childCreatureId: string;
+  parentCreatureId: string;
+  category: string;
+  description: string;
+  sortOrder: number;
+  intensity: number | null;
+  inherited: boolean;
+  createdAt: string;
+}
+
+export interface EvolutionNode {
+  id: string;
+  slug: string;
+  displayName: string;
+  scientificName: string | null;
+  parentCreatureId: string | null;
+  parentDisplayName: string | null;
+  evolutionaryGeneration: number;
+  status: string;
+  locked: boolean;
+  imageUrl: string | null;
+  thumbnailUrl: string | null;
+  candidateNumber: number | null;
+  childCount: number;
+  updatedAt: string;
+}
+
+export interface EvolutionTree {
+  roots: string[];
+  nodes: EvolutionNode[];
+}
+
+export interface EvolutionContext {
+  creature: EvolutionNode;
+  parent: EvolutionNode | null;
+  children: EvolutionNode[];
+  mutations: EvolutionMutation[];
+  inheritedTraits: string[];
+  preferredTraits: string[];
+  forbiddenTraits: string[];
+  canCreateDescendant: boolean;
+  comparison: { parent: EvolutionNode; child: EvolutionNode } | null;
 }

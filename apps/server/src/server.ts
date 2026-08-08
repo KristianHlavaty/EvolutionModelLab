@@ -10,6 +10,7 @@ import {
   candidateSourceSchema,
   confirmContactSheetInputSchema,
   contactSheetLayoutSchema,
+  createDescendantInputSchema,
   createCreatureInputSchema,
   designManifestInputSchema,
   destructiveActionInputSchema,
@@ -45,7 +46,7 @@ export function createApp(service: EvolutionModelLabService): express.Express {
   app.use(express.json({ limit: "1mb" }));
 
   app.get("/api/health", (_request, response) => {
-    response.json({ ok: true, service: "Evolution Model Lab", milestone: 3 });
+    response.json({ ok: true, service: "Evolution Model Lab", milestone: 4 });
   });
 
   app.get("/api/dashboard", (_request, response) => {
@@ -54,6 +55,10 @@ export function createApp(service: EvolutionModelLabService): express.Express {
 
   app.get("/api/creatures", (_request, response) => {
     response.json({ data: service.listCreatures() });
+  });
+
+  app.get("/api/evolution", (_request, response) => {
+    response.json({ data: service.getEvolutionTree() });
   });
 
   app.post(
@@ -69,6 +74,22 @@ export function createApp(service: EvolutionModelLabService): express.Express {
     const creatureId = uuidParameterSchema.parse(request.params.creatureId);
     response.json({ data: service.getCreature(creatureId) });
   });
+
+  app.get("/api/creatures/:creatureId/evolution", (request, response) => {
+    const creatureId = uuidParameterSchema.parse(request.params.creatureId);
+    response.json({ data: service.getEvolutionContext(creatureId) });
+  });
+
+  app.post(
+    "/api/creatures/:creatureId/descendants",
+    asyncRoute(async (request, response) => {
+      const creatureId = uuidParameterSchema.parse(request.params.creatureId);
+      const input = createDescendantInputSchema.parse(request.body);
+      response
+        .status(201)
+        .json({ data: await service.createDescendant(creatureId, input) });
+    }),
+  );
 
   app.post(
     "/api/creatures/:creatureId/rounds/concept",

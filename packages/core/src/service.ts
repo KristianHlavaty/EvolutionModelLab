@@ -30,6 +30,7 @@ import {
 import {
   candidateFeedbackInputSchema,
   type CandidateFeedbackInput,
+  type CreateDescendantInput,
   createCreatureInputSchema,
   type ContactSheetLayoutInput,
   type CandidateSource,
@@ -46,6 +47,11 @@ import {
   type DesignLockView,
   type DesignManifestView,
 } from "./design.js";
+import {
+  EvolutionWorkflow,
+  type EvolutionContextView,
+  type EvolutionTreeView,
+} from "./evolution.js";
 import {
   assertPathWithin,
   fromRepositoryRelative,
@@ -125,6 +131,8 @@ export interface CreatureSummary {
   description: string;
   generationBrief: string;
   status: string;
+  parentCreatureId: string | null;
+  evolutionaryGeneration: number;
   currentRoundId: string | null;
   lockedCandidateId: string | null;
   createdAt: string;
@@ -306,6 +314,7 @@ export class EvolutionModelLabService {
   public readonly exportsRoot: string;
   private readonly database: DatabaseHandle;
   private readonly design: DesignWorkflow;
+  private readonly evolution: EvolutionWorkflow;
   private readonly limits: ImageLimits;
   private readonly maximumFilesPerImport: number;
 
@@ -343,6 +352,13 @@ export class EvolutionModelLabService {
       this.repositoryRoot,
       this.workspaceRoot,
       this.limits,
+    );
+    this.evolution = new EvolutionWorkflow(
+      this.database.db,
+      this.repositoryRoot,
+      this.workspaceRoot,
+      this.limits,
+      this.design,
     );
   }
 
@@ -544,6 +560,8 @@ export class EvolutionModelLabService {
         description: creature.description,
         generationBrief: creature.generationBrief,
         status: creature.status,
+        parentCreatureId: creature.parentCreatureId,
+        evolutionaryGeneration: creature.evolutionaryGeneration ?? 0,
         currentRoundId: creature.currentRoundId,
         lockedCandidateId: creature.lockedCandidateId,
         createdAt: creature.createdAt,
@@ -681,6 +699,8 @@ export class EvolutionModelLabService {
       description: creature.description,
       generationBrief: creature.generationBrief,
       status: creature.status,
+      parentCreatureId: creature.parentCreatureId,
+      evolutionaryGeneration: creature.evolutionaryGeneration ?? 0,
       currentRoundId: creature.currentRoundId,
       lockedCandidateId: creature.lockedCandidateId,
       createdAt: creature.createdAt,
@@ -946,10 +966,14 @@ export class EvolutionModelLabService {
         409,
       );
     }
-    if (round.roundType !== "CONCEPT" && round.roundType !== "REFINEMENT") {
+    if (
+      round.roundType !== "CONCEPT" &&
+      round.roundType !== "REFINEMENT" &&
+      round.roundType !== "EVOLUTION"
+    ) {
       throw new AppError(
         "INVALID_ROUND_TYPE",
-        "Candidates can only be imported into concept or refinement rounds.",
+        "Candidates can only be imported into concept, refinement, or evolution rounds.",
         409,
       );
     }
@@ -1581,7 +1605,11 @@ export class EvolutionModelLabService {
     if (!round || round.creatureProjectId !== input.creatureId) {
       throw new AppError("ROUND_NOT_FOUND", "Generation round not found.", 404);
     }
-    if (round.roundType !== "CONCEPT" && round.roundType !== "REFINEMENT") {
+    if (
+      round.roundType !== "CONCEPT" &&
+      round.roundType !== "REFINEMENT" &&
+      round.roundType !== "EVOLUTION"
+    ) {
       throw new AppError(
         "INVALID_ROUND_TYPE",
         "This round cannot import images.",
@@ -1960,6 +1988,25 @@ export class EvolutionModelLabService {
 
   getDesignHistory(creatureId: string): DesignHistoryView[] {
     return this.design.getHistory(creatureId);
+  }
+
+  getEvolutionTree(): EvolutionTreeView {
+    return this.evolution.getTree();
+  }
+
+  getEvolutionContext(creatureId: string): EvolutionContextView {
+    return this.evolution.getContext(creatureId);
+  }
+
+  async createDescendant(
+    parentCreatureId: string,
+    input: CreateDescendantInput,
+  ): Promise<CreatureDetail> {
+    const created = await this.evolution.createDescendant(
+      parentCreatureId,
+      input,
+    );
+    return this.getCreature(created.creatureId);
   }
 
   setCandidateRejected(candidateId: string, rejected: boolean): void {
