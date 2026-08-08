@@ -2,7 +2,7 @@
 
 Evolution Model Lab is a local-first workspace for AI-assisted creature design. It stores creature briefs, deterministic ChatGPT prompts, imported concept candidates, durable selection state, and recoverable history without calling an image-generation API.
 
-Milestone 4 is the current release. It adds a persisted multi-generation evolution tree, approved-parent gates, ordered mutation records, deterministic evolution prompts, descendant workspaces, and ancestor/descendant comparison. ChatGPT remains a manual handoff: the application builds and saves prompts but does not call an image-generation API.
+Milestone 5 is the current release. It adds canonical-reference types, one-view deterministic prompts, immutable import attempts, content validation, explicit approvals, design-lock-aware staleness, and configurable mandatory-reference rules. ChatGPT remains a manual handoff: the application builds and saves prompts but does not call an image-generation API.
 
 > Screenshot placeholder: screenshots will be captured after the visual-review workflow stabilizes.
 
@@ -50,7 +50,7 @@ corepack pnpm dev
 
 Open [http://127.0.0.1:5173](http://127.0.0.1:5173). The single `pnpm dev` command starts the Vite interface and localhost REST server together. Both services bind to `127.0.0.1` by default.
 
-## Concept, design-lock, and evolution workflow
+## Concept, design-lock, evolution, and reference workflow
 
 1. Choose **New creature** and create `Dunkleosteus`.
 2. Enter a generation brief and create **Concept Round 1**.
@@ -72,6 +72,12 @@ Open [http://127.0.0.1:5173](http://127.0.0.1:5173). The single `pnpm dev` comma
 18. The descendant starts with an immutable Evolution Round 1. Its saved prompt names the approved ancestor, preserves the ancestor's approved constraints, applies mutations in order, and explicitly forbids unrelated anatomy and animation.
 19. Use the evolution prompt with the approved locked ancestor image in ChatGPT, then import, select, and lock a real descendant PNG through the normal candidate workflow.
 20. Return to **Lineage** to compare the ancestor and descendant, inspect the stored mutations, and continue to later generations. Reloading or reopening the app preserves every parent/child relationship.
+21. Open **References** from any locked creature. The locked PNG and frozen manifest version are shown as the current identity authority.
+22. Create a prompt for one reference type at a time. Attach the locked design in ChatGPT, use the saved prompt, and return with one standalone PNG.
+23. Import the PNG into its request. The app preserves the original separately, decodes and hashes it, records canvas/transparency checks and warnings, and never overwrites an earlier attempt.
+24. Compare the image with the locked design and choose **Review and approve**. Approval requires a separate confirmation and only satisfies rules for the exact design lock that seeded the request.
+25. Use **Settings → Mandatory references** to configure the project-level gate. The default requires the locked design, strict side profile, silhouette, and colour/material reference.
+26. A later unlock/relock keeps earlier references visible as history but marks them stale for the new identity authority. Required views must be approved again before Animation Lab can begin.
 
 ## Commands
 
@@ -84,7 +90,7 @@ pnpm format:check     # verify formatting
 pnpm lint             # ESLint
 pnpm typecheck        # strict TypeScript checks
 pnpm test             # Vitest unit/integration tests
-pnpm test:e2e         # Playwright concept, design-lock, and evolution slices
+pnpm test:e2e         # Playwright workflows through canonical references
 pnpm build            # production compile/build check
 pnpm db:migrate       # apply committed Drizzle migrations
 pnpm db:generate      # generate a migration after an intentional schema change
@@ -109,4 +115,4 @@ When MCP is implemented, it will use the same `packages/core` application servic
 
 ## Current limitations
 
-Canonical reference-building, animation, exports, MCP, and plugin skills remain intentionally pending later milestones. A locked PNG is an authoritative design copy, not a Milestone 5 canonical reference set. Evolution currently models one approved parent per descendant; mutations are frozen when the descendant is created, and ancestor/descendant comparison is side-by-side. Local history actors are recorded as `LOCAL_USER` or `SYSTEM`; authentication and named-user identity are not implemented. Contact-sheet import supports PNG grids with explicit rows, columns, outer margins, and horizontal/vertical gaps; it does not guess irregular cell boundaries. See [docs/implementation-plan.md](docs/implementation-plan.md) for exact status and limitations.
+Animation, exports, MCP, and plugin skills remain intentionally pending later milestones. Reference validation proves file integrity and records canvas/transparency warnings; semantic identity matching still requires explicit human approval. Evolution currently models one approved parent per descendant; mutations are frozen when the descendant is created, and ancestor/descendant comparison is side-by-side. Local history actors are recorded as `LOCAL_USER` or `SYSTEM`; authentication and named-user identity are not implemented. Contact-sheet import supports PNG grids with explicit rows, columns, outer margins, and horizontal/vertical gaps; it does not guess irregular cell boundaries. See [docs/implementation-plan.md](docs/implementation-plan.md) for exact status and limitations.

@@ -12,14 +12,14 @@
 
 Evolution Model Lab is a local-first creature design workspace. ChatGPT supplies images through ordinary conversations; this application persists project state, builds prompts, imports and validates user-provided images, and maintains recoverable history. It does not call paid image-generation APIs and never pretends to generate images.
 
-The current release implements **Milestone 4**, building on the completed design-lock workflow. Evolution is enabled only where its approved-parent gate is enforced; canonical references, animation, export, MCP, and ChatGPT plugin surfaces remain disabled or clearly documented as later work.
+The current release implements **Milestone 5**, building on locked designs and persisted lineage. Canonical references are enabled only through design-lock-aware request, import, validation, and explicit approval gates; animation, export, MCP, and ChatGPT plugin surfaces remain disabled or clearly documented as later work.
 
 ## Module boundaries
 
-- `apps/web`: React/Vite interface, routing, uploads, numbered gallery, feedback/manifest/mutation editors, candidate and lineage comparison, persisted evolution tree, lock/unlock confirmations, lock/history presentation, prompt history, and contact-sheet preview/confirmation.
+- `apps/web`: React/Vite interface, routing, uploads, numbered gallery, feedback/manifest/mutation editors, candidate and lineage comparison, persisted evolution tree, canonical-reference request/import/approval UI, mandatory-reference settings, lock/unlock confirmations, prompt history, and contact-sheet preview/confirmation.
 - `apps/server`: localhost Express transport, request parsing, error mapping, and exact guarded media responses.
 - `apps/mcp-server`: reserved application boundary for the later Streamable HTTP MCP server; no MCP SDK is installed through Milestone 4.
-- `packages/core`: reusable workflow/application services, including manifest versioning, design-lock rules, approved-parent evolution branching, lineage reads, and ordered mutation persistence, used by REST and future MCP adapters.
+- `packages/core`: reusable workflow/application services, including manifest versioning, design-lock rules, approved-parent evolution branching, lineage reads, ordered mutations, canonical-reference integrity/approval, and mandatory-rule evaluation, used by REST and future MCP adapters.
 - `packages/database`: SQLite connection, Drizzle schema, migrations, and database lifecycle.
 - `packages/shared`: Zod request/response contracts and shared domain constants.
 - `packages/image-processing`: PNG inspection, SHA-256 hashing, deterministic grid geometry, derived crop creation, and thumbnails.
@@ -73,6 +73,15 @@ Existing projects receive a version-zero draft derived from their project settin
 
 Existing creatures remain generation zero roots. A descendant transaction writes its parent relationship, generation, source creature/candidate round lineage, mutations, and two-sided history together. No parent rows or files are rewritten.
 
+## Milestone 5 additive schema
+
+`0004_milestone_five.sql` preserves all previous rows while adding:
+
+- `reference_images`, which represents an immutable canonical-reference attempt with its creature, exact design-lock relationship, type, status, generated prompt, prompt/context paths, guarded original/thumbnail paths, filename metadata, notes, validation JSON, decoded dimensions/alpha/hash/MIME, approval state, actor, and timestamps;
+- a reference-image owner on `history_events`, plus indexes for creature history, design-lock/type lookup, status dashboards, and exclusive prompt/image paths.
+
+The table deliberately permits multiple historical attempts of one type while core prevents duplicate pending requests and approved-type replacement for an active lock. Mandatory satisfaction uses only approved rows whose `design_lock_id` equals the current active lock.
+
 ## Filesystem ownership and safety
 
 - Original uploads are written once under `workspace/creatures/<slug>/rounds/<round>/candidates/` with generated UUID filenames.
@@ -117,7 +126,7 @@ Existing creatures remain generation zero roots. A descendant transaction writes
 | 2         | Feedback, refinement, prompt history, contact sheets | Completed |
 | 3         | Design lock, manifest, history expansion             | Completed |
 | 4         | Evolution lineage and mutations                      | Completed |
-| 5         | Canonical references and approval gates              | Pending   |
+| 5         | Canonical references and approval gates              | Completed |
 | 6         | Animation Lab and repair workflow                    | Pending   |
 | 7         | Validation and game-ready export                     | Pending   |
 | 8         | Streamable HTTP MCP server and tools                 | Pending   |
@@ -234,9 +243,44 @@ The Milestone 4 Playwright workflow creates and approves a parent manifest, lock
 
 Manual in-app browser QA inspected a persisted three-root/two-generation tree, the focused ancestor/descendant comparison, inherited constraints, mutation details, and the descendant form at desktop and 700-pixel responsive widths. It found and corrected focused-lineage sidebar state plus previously unstyled descendant controls. The corrected page had no horizontal overflow and reported no browser console warnings or errors. Isolated QA services were stopped afterward.
 
+## Milestone 5 acceptance criteria
+
+- [x] The complete reference type set is modeled; `LOCKED_DESIGN` is the non-requestable identity anchor and all other types can be requested individually.
+- [x] Reference creation requires and verifies the current active design lock, uses its immutable manifest snapshot, persists one deterministic prompt/context pair, and forbids multi-view/contact-sheet/animation output.
+- [x] Every attempt is tied to an exact design-lock ID, stored in a new UUID directory, and preserved independently; old-lock approvals remain visible but stale after relock.
+- [x] Import accepts exactly one real PNG, performs content/limit/hash checks, preserves the original and separate thumbnail, records transparency/canvas validation, and rejects duplicate bytes for the same lock.
+- [x] Approval requires a separate confirmation plus current-lock and stored-file decoding/hash integrity checks; it never silently approves or replaces an image.
+- [x] Project settings expose an ordered unique mandatory-reference set that always includes the locked design and defaults to locked design, strict side profile, silhouette, and colour/material.
+- [x] Mandatory satisfaction and `REFERENCE_APPROVED` use only approvals belonging to the active design lock and re-evaluate after settings changes or relock.
+- [x] The responsive reference UI presents the locked identity, mandatory progress, all reference types, saved prompts, immutable attempts, upload notes, validation warnings, explicit approval modal, and stale-history markers.
+- [x] Existing concept/refinement, design-lock, and evolution browser workflows remain available; locked creatures retain both reference and current-round review actions.
+- [x] Unit/integration and Playwright coverage exercise gates, prompts/artifacts, invalid/duplicate imports, unchanged bytes, explicit approvals, restart persistence, configurable rules, relock staleness, and full default-set completion.
+
+## Milestone 5 test status
+
+Final verification on 2026-08-08:
+
+| Command                          | Result                                                                                                                 |
+| -------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `corepack pnpm format:check`     | Passed; every matched file uses Prettier style                                                                         |
+| `corepack pnpm lint`             | Passed; 0 ESLint errors                                                                                                |
+| `corepack pnpm typecheck`        | Passed; packages, server, and web compile in strict mode                                                               |
+| `corepack pnpm test`             | Passed; 7 files and 30 Vitest unit/integration tests                                                                   |
+| `corepack pnpm test:e2e`         | Passed; 4 complete Playwright workflows through canonical references                                                   |
+| `corepack pnpm build`            | Passed; packages/server compiled and Vite transformed 1,678 modules                                                    |
+| Manual primary workflow exercise | Passed; approved set, warnings, attempts, settings, desktop/narrow layouts, persistence, and 0 console warnings/errors |
+
+The Milestone 5 Playwright workflow locks a real creature PNG, verifies the default three missing canonical views, creates and inspects one-view prompts, imports three distinct PNGs, explicitly confirms each approval, satisfies the mandatory gate, reloads, changes project rules to add a missing front view, observes the gate reopen, restores the rule, and verifies the creature remains `REFERENCE_APPROVED`. All earlier browser workflows remain green.
+
+The core suite verifies missing-lock and duplicate-pending gates, frozen manifest prompt content, exclusive prompt/context artifacts, invalid and byte-duplicate imports, exact stored original bytes, mechanical validation, confirmation requirements, all-default approval, restart persistence, project-rule changes, old-lock staleness after relock, and unchanged locked candidate originals.
+
+Manual in-app browser QA inspected the completed reference set and warnings, reference-type grid, collapsed prompt history, project settings, and mandatory-rule defaults at desktop and 700-pixel widths. The page had no horizontal overflow and reported no browser console warnings or errors. Isolated manual-QA services were stopped afterward.
+
 ## Known limitations
 
-- Canonical references, animation, export, MCP, and plugin skills remain deferred to their planned milestones. The locked PNG is an authoritative design copy, not a Milestone 5 canonical reference set.
+- Animation, export, MCP, and plugin skills remain deferred to their planned milestones.
+- Reference validation proves file integrity and records canvas/transparency checks; visual anatomy, identity, palette, and material consistency still require explicit human review.
+- A reference attempt accepts one separate PNG. Contact-sheet reference extraction and automatic semantic comparison are not implemented.
 - Evolution is a strict single-parent tree. Hybrid/multiple-parent descent and cross-project mutation merging are not modeled.
 - Mutations are immutable after descendant creation in Milestone 4; corrections require a new descendant branch. Lineage comparison is side-by-side rather than a synchronized overlay.
 - Local history actor values are `LOCAL_USER` and `SYSTEM`; authentication and named-user attribution are not implemented.

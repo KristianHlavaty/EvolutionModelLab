@@ -5,6 +5,7 @@ import { ZodError } from "zod";
 
 import { isAppError, type EvolutionModelLabService } from "@eml/core";
 import {
+  approveReferenceInputSchema,
   candidateFeedbackInputSchema,
   candidateRejectionInputSchema,
   candidateSourceSchema,
@@ -15,6 +16,9 @@ import {
   designManifestInputSchema,
   destructiveActionInputSchema,
   lockDesignInputSchema,
+  importReferenceMetadataSchema,
+  projectReferenceSettingsInputSchema,
+  createReferenceInputSchema,
   selectCandidateInputSchema,
   unlockDesignInputSchema,
   uuidParameterSchema,
@@ -46,7 +50,7 @@ export function createApp(service: EvolutionModelLabService): express.Express {
   app.use(express.json({ limit: "1mb" }));
 
   app.get("/api/health", (_request, response) => {
-    response.json({ ok: true, service: "Evolution Model Lab", milestone: 4 });
+    response.json({ ok: true, service: "Evolution Model Lab", milestone: 5 });
   });
 
   app.get("/api/dashboard", (_request, response) => {
@@ -90,6 +94,71 @@ export function createApp(service: EvolutionModelLabService): express.Express {
         .json({ data: await service.createDescendant(creatureId, input) });
     }),
   );
+
+  app.get("/api/creatures/:creatureId/references", (request, response) => {
+    const creatureId = uuidParameterSchema.parse(request.params.creatureId);
+    response.json({ data: service.getReferenceContext(creatureId) });
+  });
+
+  app.post(
+    "/api/creatures/:creatureId/references",
+    asyncRoute(async (request, response) => {
+      const creatureId = uuidParameterSchema.parse(request.params.creatureId);
+      const input = createReferenceInputSchema.parse(request.body);
+      response.status(201).json({
+        data: await service.createReference(creatureId, input),
+      });
+    }),
+  );
+
+  app.post(
+    "/api/references/:referenceId/import",
+    upload.single("image"),
+    asyncRoute(async (request, response) => {
+      const referenceId = uuidParameterSchema.parse(request.params.referenceId);
+      const metadata = importReferenceMetadataSchema.parse(request.body);
+      if (!request.file) {
+        response.status(400).json({
+          error: {
+            code: "REFERENCE_IMAGE_REQUIRED",
+            message: "Choose one canonical-reference PNG to import.",
+          },
+        });
+        return;
+      }
+      response.status(201).json({
+        data: await service.importReference(
+          referenceId,
+          {
+            buffer: request.file.buffer,
+            originalFilename: request.file.originalname,
+          },
+          metadata.notes,
+          metadata.actor,
+        ),
+      });
+    }),
+  );
+
+  app.post(
+    "/api/references/:referenceId/approve",
+    asyncRoute(async (request, response) => {
+      const referenceId = uuidParameterSchema.parse(request.params.referenceId);
+      const input = approveReferenceInputSchema.parse(request.body);
+      response.json({
+        data: await service.approveReference(referenceId, input),
+      });
+    }),
+  );
+
+  app.get("/api/reference-settings", (_request, response) => {
+    response.json({ data: service.getReferenceSettings() });
+  });
+
+  app.patch("/api/reference-settings", (request, response) => {
+    const input = projectReferenceSettingsInputSchema.parse(request.body);
+    response.json({ data: service.updateReferenceSettings(input) });
+  });
 
   app.post(
     "/api/creatures/:creatureId/rounds/concept",
@@ -302,6 +371,27 @@ export function createApp(service: EvolutionModelLabService): express.Express {
       }
     },
   );
+
+  app.get("/api/references/:referenceId/:kind", (request, response, next) => {
+    try {
+      const referenceId = uuidParameterSchema.parse(request.params.referenceId);
+      const kind = request.params.kind;
+      if (kind !== "image" && kind !== "thumbnail") {
+        response.status(404).json({
+          error: { code: "MEDIA_NOT_FOUND", message: "Media not found." },
+        });
+        return;
+      }
+      const media = service.getReferenceMedia(referenceId, kind);
+      response.type(media.mimeType);
+      response.setHeader("Cache-Control", "private, max-age=3600");
+      response.sendFile(media.path, { dotfiles: "allow" }, (error) => {
+        if (error) next(error);
+      });
+    } catch (error) {
+      next(error);
+    }
+  });
 
   app.get("/api/candidates/:candidateId/:kind", (request, response, next) => {
     try {

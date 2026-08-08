@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildConceptPrompt,
   buildEvolutionPrompt,
+  buildReferencePrompt,
   buildRefinementPrompt,
 } from "./index.js";
 
@@ -25,6 +26,43 @@ describe("buildConceptPrompt", () => {
     expect(first).toContain("Create 10 visibly different");
     expect(first).toContain("Do not create an animation");
     expect(first).toContain("transparent backgrounds");
+  });
+});
+
+describe("buildReferencePrompt", () => {
+  it("requests exactly one locked-identity view without redesign", () => {
+    const input = {
+      displayName: "Dunkleosteus",
+      scientificName: "Dunkleosteus terrelli",
+      referenceType: "SIDE_PROFILE",
+      referenceLabel: "strict side profile",
+      lockedCandidateId: "locked-candidate-id",
+      manifestVersion: 2,
+      immutableFeatures: ["Broad skull", "Blade-like jaw plates"],
+      preferredFeatures: ["Ochre plate edges"],
+      forbiddenFeatures: ["No horns"],
+      anatomyNotes: "Keep approved plate boundaries.",
+      paletteNotes: "Muted ochre and charcoal.",
+      textureNotes: "Weathered armour.",
+      constraints: {
+        camera: "strict orthographic side view",
+        facing: "right",
+        canvasWidth: 1024,
+        canvasHeight: 1024,
+        transparency: true,
+        lighting: "neutral studio lighting",
+        style: "match the attached locked design exactly",
+      },
+    };
+    const prompt = buildReferencePrompt(input);
+
+    expect(prompt).toBe(buildReferencePrompt(input));
+    expect(prompt).toContain("Create exactly one strict side profile");
+    expect(prompt).toContain("Locked candidate: locked-candidate-id");
+    expect(prompt).toContain("Frozen manifest version: 2");
+    expect(prompt).toContain("Do not redesign");
+    expect(prompt).toContain("Do not add labels");
+    expect(prompt).toContain("not an animation frame sequence");
   });
 });
 

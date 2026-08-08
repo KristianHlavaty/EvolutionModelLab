@@ -1,6 +1,11 @@
 import { z } from "zod";
 
-import { candidateSources, evolutionMutationCategories } from "./domain.js";
+import {
+  candidateSources,
+  evolutionMutationCategories,
+  referenceTypes,
+  requestableReferenceTypes,
+} from "./domain.js";
 
 export const createCreatureInputSchema = z.object({
   displayName: z.string().trim().min(1, "Display name is required.").max(120),
@@ -36,6 +41,46 @@ export type EvolutionMutationInput = z.infer<
   typeof evolutionMutationInputSchema
 >;
 export type CreateDescendantInput = z.input<typeof createDescendantInputSchema>;
+
+export const referenceTypeSchema = z.enum(referenceTypes);
+export const requestableReferenceTypeSchema = z.enum(requestableReferenceTypes);
+
+export const createReferenceInputSchema = z.object({
+  referenceType: requestableReferenceTypeSchema,
+  notes: z.string().trim().max(8_000).default(""),
+  actor: z.string().trim().min(1).max(120).default("LOCAL_USER"),
+});
+
+export const importReferenceMetadataSchema = z.object({
+  notes: z.string().trim().max(8_000).default(""),
+  actor: z.string().trim().min(1).max(120).default("LOCAL_USER"),
+});
+
+export const approveReferenceInputSchema = z.object({
+  confirmed: z.boolean().default(false),
+  notes: z.string().trim().max(8_000).optional(),
+  actor: z.string().trim().min(1).max(120).default("LOCAL_USER"),
+});
+
+export const projectReferenceSettingsInputSchema = z.object({
+  requiredReferenceTypes: z
+    .array(referenceTypeSchema)
+    .min(1)
+    .max(referenceTypes.length)
+    .refine((values) => new Set(values).size === values.length, {
+      message: "Required reference types must be unique.",
+    })
+    .refine((values) => values.includes("LOCKED_DESIGN"), {
+      message: "The locked design must remain mandatory.",
+    }),
+  actor: z.string().trim().min(1).max(120).default("LOCAL_USER"),
+});
+
+export type CreateReferenceInput = z.input<typeof createReferenceInputSchema>;
+export type ApproveReferenceInput = z.input<typeof approveReferenceInputSchema>;
+export type ProjectReferenceSettingsInput = z.input<
+  typeof projectReferenceSettingsInputSchema
+>;
 
 export const createConceptRoundInputSchema = z.object({
   creatureId: z.uuid(),

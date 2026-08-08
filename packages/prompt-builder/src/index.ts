@@ -69,6 +69,30 @@ export interface EvolutionPromptInput {
   candidateCount?: number;
 }
 
+export interface ReferencePromptInput {
+  displayName: string;
+  scientificName?: string | null;
+  referenceType: string;
+  referenceLabel: string;
+  lockedCandidateId: string;
+  manifestVersion: number;
+  immutableFeatures: string[];
+  preferredFeatures: string[];
+  forbiddenFeatures: string[];
+  anatomyNotes: string;
+  paletteNotes: string;
+  textureNotes: string;
+  constraints: {
+    camera: string;
+    facing: string;
+    canvasWidth: number;
+    canvasHeight: number;
+    transparency: boolean;
+    lighting: string;
+    style: string;
+  };
+}
+
 function identity(input: {
   displayName: string;
   scientificName?: string | null;
@@ -212,5 +236,50 @@ export function buildEvolutionPrompt(input: EvolutionPromptInput): string {
     "Keep camera, facing, canvas, scale, transparency, palette logic, material treatment, and lighting consistent.",
     "Do not create an animation or animation frames.",
     "Return separate PNGs or one clean, clearly numbered contact sheet with no overlaps.",
+  ].join("\n");
+}
+
+export function buildReferencePrompt(input: ReferencePromptInput): string {
+  const anatomyDiagram = input.referenceType === "ANATOMY_DIAGRAM";
+  return [
+    "# Evolution Model Lab — Canonical Reference Request",
+    "",
+    `Creature: ${identity(input)}`,
+    `Reference type: ${input.referenceType}`,
+    `Requested view: ${input.referenceLabel}`,
+    "Task type: REFERENCE",
+    "Workflow state: REFERENCE_BUILDING",
+    `Locked candidate: ${input.lockedCandidateId}`,
+    `Frozen manifest version: ${input.manifestVersion}`,
+    "",
+    ...feedbackSection("Immutable identity features", input.immutableFeatures),
+    ...feedbackSection("Preferred identity features", input.preferredFeatures),
+    ...feedbackSection("Forbidden changes", input.forbiddenFeatures),
+    "## Approved design notes",
+    `Anatomy: ${input.anatomyNotes || "No additional anatomy notes recorded."}`,
+    `Palette: ${input.paletteNotes || "Match the attached locked design exactly."}`,
+    `Texture/material: ${input.textureNotes || "Match the attached locked design exactly."}`,
+    "",
+    "## Fixed production constraints",
+    `Camera: ${input.constraints.camera}`,
+    `Facing baseline: ${input.constraints.facing}`,
+    `Canvas: ${input.constraints.canvasWidth} × ${input.constraints.canvasHeight} pixels`,
+    `Transparency: ${
+      input.constraints.transparency
+        ? "transparent background required"
+        : "background may be opaque"
+    }`,
+    `Lighting: ${input.constraints.lighting}`,
+    `Style: ${input.constraints.style}`,
+    "",
+    "## Required output",
+    "Use the attached locked-design PNG as the exact and only creature identity authority.",
+    `Create exactly one ${input.referenceLabel.toLowerCase()} reference image.`,
+    "Use a neutral, non-animated pose. Preserve anatomy, silhouette logic, scale, materials, palette, texture, style, and lighting exactly.",
+    "Do not redesign, evolve, stylize away from, embellish, or add unapproved structures to the creature.",
+    anatomyDiagram
+      ? "Labels and restrained diagram callouts are allowed only where they clarify anatomy already approved in the manifest."
+      : "Do not add labels, text, arrows, diagram marks, borders, or extra views.",
+    "Return one standalone PNG, not a contact sheet and not an animation frame sequence.",
   ].join("\n");
 }

@@ -1,6 +1,7 @@
 import {
   Activity,
   ArrowRight,
+  BookOpenCheck,
   Check,
   ChevronRight,
   Clipboard,
@@ -48,6 +49,7 @@ import {
   ManifestPage,
 } from "./MilestoneThree.tsx";
 import { EvolutionPage } from "./MilestoneFour.tsx";
+import { ReferencesPage, ReferenceSettingsPage } from "./MilestoneFive.tsx";
 import { PromptHistoryPage, RoundWorkspacePage } from "./MilestoneTwo.tsx";
 import type { Candidate, Creature, DashboardData, Round } from "./types.ts";
 
@@ -615,6 +617,12 @@ function CreatureDetailPage() {
             >
               <GitBranch size={16} /> Lineage
             </Link>
+            <Link
+              className="button secondary"
+              to={`/creatures/${creature.id}/references`}
+            >
+              <BookOpenCheck size={16} /> References
+            </Link>
             <span
               className={`status-pill large status-${creature.status.toLowerCase()}`}
             >
@@ -687,28 +695,68 @@ function CreatureDetailPage() {
             <>
               <h2>
                 {creature.status === "DESIGN_LOCKED"
-                  ? "Authoritative design secured"
-                  : creature.status === "CONCEPT"
-                    ? "Import concept images"
-                    : creature.status === "REFINING"
-                      ? "Import refinement images"
-                      : "Selection saved"}
+                  ? "Build canonical references"
+                  : creature.status === "REFERENCE_BUILDING"
+                    ? "Complete mandatory references"
+                    : creature.status === "REFERENCE_APPROVED"
+                      ? "Reference gate satisfied"
+                      : creature.status === "CONCEPT"
+                        ? "Import concept images"
+                        : creature.status === "REFINING"
+                          ? "Import refinement images"
+                          : "Selection saved"}
               </h2>
               <p>
                 {creature.status === "DESIGN_LOCKED"
-                  ? "The locked image and frozen manifest are protected. Unlock explicitly before replacing the design."
-                  : creature.status === "CONCEPT"
-                    ? "Add one to ten PNG results and review the numbered gallery."
-                    : creature.status === "REFINING"
-                      ? "Import refinements, compare them, and select the next parent."
-                      : "Record structured feedback and create the next refinement round."}
+                  ? "The locked image and frozen manifest can now anchor one canonical view at a time."
+                  : creature.status === "REFERENCE_BUILDING"
+                    ? "Import and explicitly approve every project-mandatory view for this exact design lock."
+                    : creature.status === "REFERENCE_APPROVED"
+                      ? "All mandatory canonical views are approved for this design lock."
+                      : creature.status === "CONCEPT"
+                        ? "Add one to ten PNG results and review the numbered gallery."
+                        : creature.status === "REFINING"
+                          ? "Import refinements, compare them, and select the next parent."
+                          : "Record structured feedback and create the next refinement round."}
               </p>
               <Link
                 className="button primary full"
-                to={`/creatures/${creature.id}/rounds/${creature.currentRound.id}`}
+                to={
+                  [
+                    "DESIGN_LOCKED",
+                    "REFERENCE_BUILDING",
+                    "REFERENCE_APPROVED",
+                  ].includes(creature.status)
+                    ? `/creatures/${creature.id}/references`
+                    : `/creatures/${creature.id}/rounds/${creature.currentRound.id}`
+                }
               >
-                <FolderOpen size={17} /> Open current round
+                {[
+                  "DESIGN_LOCKED",
+                  "REFERENCE_BUILDING",
+                  "REFERENCE_APPROVED",
+                ].includes(creature.status) ? (
+                  <>
+                    <BookOpenCheck size={17} /> Open references
+                  </>
+                ) : (
+                  <>
+                    <FolderOpen size={17} /> Open current round
+                  </>
+                )}
               </Link>
+              {[
+                "DESIGN_LOCKED",
+                "REFERENCE_BUILDING",
+                "REFERENCE_APPROVED",
+              ].includes(creature.status) && (
+                <Link
+                  className="text-link reference-round-link"
+                  to={`/creatures/${creature.id}/rounds/${creature.currentRound.id}`}
+                >
+                  <FolderOpen size={15} /> Open current round
+                </Link>
+              )}
             </>
           ) : null}
           <div className="safety-note">
@@ -1122,12 +1170,7 @@ export function App() {
         />
         <Route
           path="/creatures/:creatureId/references"
-          element={
-            <FutureFeaturePage
-              title="Canonical references"
-              milestone="Milestone 5"
-            />
-          }
+          element={<ReferencesPage />}
         />
         <Route
           path="/creatures/:creatureId/animations"
@@ -1153,15 +1196,7 @@ export function App() {
             />
           }
         />
-        <Route
-          path="/settings"
-          element={
-            <FutureFeaturePage
-              title="Project settings"
-              milestone="Milestone 5"
-            />
-          }
-        />
+        <Route path="/settings" element={<ReferenceSettingsPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </AppShell>

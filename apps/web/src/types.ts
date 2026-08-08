@@ -257,3 +257,88 @@ export interface EvolutionContext {
   canCreateDescendant: boolean;
   comparison: { parent: EvolutionNode; child: EvolutionNode } | null;
 }
+
+export type ReferenceType =
+  | "LOCKED_DESIGN"
+  | "SIDE_PROFILE"
+  | "OPPOSITE_SIDE"
+  | "FRONT"
+  | "THREE_QUARTER"
+  | "TOP"
+  | "SILHOUETTE"
+  | "COLOUR_MATERIAL"
+  | "ANATOMY_DIAGRAM";
+
+export interface ReferenceValidation {
+  valid: boolean;
+  warnings: string[];
+  checks: {
+    decodedPng: boolean;
+    withinUploadLimits: boolean;
+    transparentBackground: boolean;
+    canvasMatchesManifest: boolean;
+    currentDesignLock: boolean;
+  };
+}
+
+export interface CanonicalReference {
+  id: string;
+  creatureProjectId: string;
+  designLockId: string;
+  referenceType: ReferenceType;
+  referenceLabel: string;
+  status: string;
+  generatedPrompt: string;
+  originalFilename: string | null;
+  notes: string;
+  validation: ReferenceValidation;
+  width: number | null;
+  height: number | null;
+  hasAlpha: boolean | null;
+  fileHash: string | null;
+  approved: boolean;
+  currentDesign: boolean;
+  imageUrl: string | null;
+  thumbnailUrl: string | null;
+  actor: string | null;
+  createdAt: string;
+  updatedAt: string;
+  approvedAt: string | null;
+}
+
+export interface ReferenceContext {
+  creature: {
+    id: string;
+    displayName: string;
+    scientificName: string | null;
+    status: string;
+  };
+  activeLock: {
+    id: string;
+    candidateId: string;
+    manifestVersion: number;
+    imageUrl: string;
+  } | null;
+  requiredReferenceTypes: ReferenceType[];
+  satisfiedReferenceTypes: ReferenceType[];
+  missingMandatoryReferenceTypes: ReferenceType[];
+  availableReferenceTypes: Array<{
+    type: Exclude<ReferenceType, "LOCKED_DESIGN">;
+    label: string;
+    mandatory: boolean;
+    approved: boolean;
+    latestStatus: string | null;
+  }>;
+  references: CanonicalReference[];
+  canRequest: boolean;
+  animationGateSatisfied: boolean;
+}
+
+export interface ReferenceSettings {
+  requiredReferenceTypes: ReferenceType[];
+  availableReferenceTypes: Array<{
+    type: ReferenceType;
+    label: string;
+  }>;
+  updatedAt: string;
+}

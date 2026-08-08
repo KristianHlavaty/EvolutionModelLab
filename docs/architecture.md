@@ -4,16 +4,16 @@
 
 Evolution Model Lab is a pnpm TypeScript monorepo with strict module ownership:
 
-- `apps/web` owns browser rendering, routing, drag/drop, file selection, clipboard events, structured feedback and manifest editing, candidate and lineage comparison, evolution-tree presentation, ordered mutation editing, contact-sheet preview, confirmation dialogs, history presentation, and user-facing errors.
+- `apps/web` owns browser rendering, routing, drag/drop, file selection, clipboard events, structured feedback and manifest editing, candidate and lineage comparison, evolution-tree presentation, ordered mutation editing, canonical-reference requests/imports/approval confirmations, mandatory-reference settings, contact-sheet preview, history presentation, and user-facing errors.
 - `apps/server` owns localhost HTTP transport, multipart parsing, Zod boundary validation, and HTTP error mapping.
-- `packages/core` owns creature, round, manifest, lock/unlock, evolution lineage, mutation, history, candidate-protection, filesystem orchestration, and service-level rules.
+- `packages/core` owns creature, round, manifest, lock/unlock, evolution lineage, mutation, canonical-reference integrity/approval gates, mandatory-rule evaluation, history, candidate-protection, filesystem orchestration, and service-level rules.
 - `packages/database` owns the Drizzle schema, committed SQLite migrations, connection pragmas, and database lifecycle.
 - `packages/prompt-builder` owns deterministic prompt text.
 - `packages/image-processing` owns content-based PNG validation, SHA-256 hashing, image metadata, deterministic crop geometry, derived crops, and thumbnails.
 - `apps/mcp-server` is reserved for the Milestone 8 adapter and will call `packages/core`; it must not reimplement rules.
 - `packages/sprite-exporter` is reserved for Milestone 7.
 
-## Data flow through Milestone 4
+## Data flow through Milestone 5
 
 ### REST flow
 
@@ -21,7 +21,7 @@ The React page submits a Zod-shaped request or multipart file set to Express. Ex
 
 ### Database ownership
 
-SQLite is authoritative for searchable state. `packages/database/drizzle/0000_milestone_one.sql` creates creature projects, generation rounds, candidates, candidate feedback, history events, and project settings. `0001_milestone_two.sql` additively introduces frozen feedback snapshots, contact-sheet imports, and per-candidate crop provenance. `0002_milestone_three.sql` additively introduces the current Design Manifest, immutable manifest versions, design-lock records, richer history ownership fields, and indexes for current/versioned lookups. `0003_milestone_four.sql` adds guarded lineage/source indexes and ordered `evolution_mutations` rows that point to both parent and child projects. Existing project settings are backfilled into version-zero manifest drafts without treating untouched defaults as explicit owner approval.
+SQLite is authoritative for searchable state. `packages/database/drizzle/0000_milestone_one.sql` creates creature projects, generation rounds, candidates, candidate feedback, history events, and project settings. `0001_milestone_two.sql` additively introduces frozen feedback snapshots, contact-sheet imports, and per-candidate crop provenance. `0002_milestone_three.sql` additively introduces the current Design Manifest, immutable manifest versions, design-lock records, richer history ownership fields, and indexes for current/versioned lookups. `0003_milestone_four.sql` adds guarded lineage/source indexes and ordered `evolution_mutations` rows. `0004_milestone_five.sql` adds immutable canonical-reference requests/imports, their exact design-lock relationship, saved prompt/context paths, validation results, approval state, and reference ownership on history events. Existing project settings are backfilled into version-zero manifest drafts without treating untouched defaults as explicit owner approval.
 
 The default database is `data/evolution-model-lab.db`. WAL mode, foreign keys, a busy timeout, and committed migrations are applied on startup.
 
@@ -60,6 +60,14 @@ The web lineage route reads a flat, persistence-backed tree from core and groups
 Core derives inherited, preferred, and forbidden constraints from the approved ancestor manifest; it does not copy or invent anatomy in the child's editable manifest. A successful transaction creates the child, its parent link and generation number, one immutable `EVOLUTION` round linked to the source creature and parent candidate, ordered mutation rows, and history for both projects. The deterministic prompt and JSON context are staged under `round-001-evolution/`. A failed operation removes only the new child directory when that directory was created by the operation. Parent originals, locks, rounds, and manifest history are never modified.
 
 Evolution candidate imports, selection, and design locking reuse the same validated candidate and lock services as concept/refinement work. Once a child is locked it may seed another generation. Tree reads, mutation reads, and comparison state are derived from persisted relationships and survive process restart.
+
+### Canonical-reference flow
+
+Reference creation requires an active authoritative design lock and verifies the guarded locked PNG bytes and SHA-256 before staging anything. Core reads the immutable manifest version associated with that lock, generates a one-view prompt, and writes `prompt.txt` plus `generation-context.json` under a new UUID attempt directory inside `references/<type>/`. The database row stores the exact design-lock ID, so an approval from a superseded lock never satisfies the current creature.
+
+Each attempt accepts at most one real PNG. Core validates and hashes the bytes in memory, writes an exclusive original and separately encoded thumbnail, and records transparency/canvas checks as warnings without pretending those mechanical checks prove visual identity. The imported original is never overwritten. Approval requires a separate confirmation, rereads and decodes the guarded stored file, verifies its hash, then appends history and marks the row approved.
+
+Project settings store an ordered unique mandatory-reference list that must include `LOCKED_DESIGN`. The default is locked design, strict side profile, silhouette, and colour/material. Core calculates satisfaction from the active lock plus approved rows tied to that same lock. `REFERENCE_APPROVED` means that mandatory set is complete; optional reference attempts do not block the workflow. Settings changes and relocks re-evaluate the gate while preserving prior attempts as stale history.
 
 ## Future flows
 

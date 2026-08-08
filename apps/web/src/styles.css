@@ -2550,3 +2550,442 @@ select:focus-visible,
     justify-self: start;
   }
 }
+
+/* Milestone 5: canonical references */
+.reference-lock-gate {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.reference-round-link {
+  margin-top: 0.7rem;
+  justify-content: center;
+}
+
+.reference-lock-gate > svg {
+  color: var(--acid);
+}
+
+.reference-lock-gate > div {
+  flex: 1;
+}
+
+.reference-lock-gate h2,
+.reference-lock-gate p {
+  margin: 0.2rem 0;
+}
+
+.reference-lock-gate p,
+.mandatory-progress > p,
+.locked-reference-card p {
+  color: var(--muted);
+}
+
+.reference-overview-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+  gap: 1rem;
+}
+
+.locked-reference-card {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.7fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 1rem;
+}
+
+.locked-reference-card h2,
+.mandatory-progress h2 {
+  margin: 0.2rem 0 0.5rem;
+}
+
+.reference-preview {
+  min-height: 170px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+}
+
+.reference-preview img {
+  width: 100%;
+  height: 100%;
+  max-height: 320px;
+  object-fit: contain;
+}
+
+.reference-preview > div {
+  display: grid;
+  place-items: center;
+  gap: 0.5rem;
+  color: var(--muted);
+}
+
+.mandatory-progress {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.mandatory-reference-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin: 0.5rem 0;
+}
+
+.mandatory-reference-pills > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.42rem 0.65rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  font:
+    0.67rem "DM Mono",
+    monospace;
+  text-transform: uppercase;
+}
+
+.mandatory-reference-pills .satisfied {
+  border-color: color-mix(in srgb, var(--acid) 45%, var(--line));
+  color: var(--acid);
+  background: color-mix(in srgb, var(--acid) 6%, transparent);
+}
+
+.mandatory-reference-pills .missing > span {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--amber);
+}
+
+.reference-type-panel {
+  display: grid;
+  gap: 1rem;
+}
+
+.reference-type-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.6rem;
+}
+
+.reference-type-grid > article {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.8rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface-raised);
+}
+
+.reference-type-grid article > div {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.reference-type-grid article span {
+  color: var(--muted);
+  font-size: 0.73rem;
+}
+
+.reference-type-approved,
+.reference-approved-note {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--acid) !important;
+  font-weight: 750;
+}
+
+.reference-attempts {
+  display: grid;
+  gap: 1rem;
+}
+
+.reference-attempt {
+  display: grid;
+  gap: 1rem;
+}
+
+.reference-attempt.approved {
+  border-color: color-mix(in srgb, var(--acid) 35%, var(--line));
+}
+
+.reference-attempt.stale {
+  opacity: 0.75;
+}
+
+.reference-attempt-heading,
+.reference-badges,
+.reference-meta,
+.prompt-toolbar,
+.validation-summary > div {
+  display: flex;
+  align-items: center;
+}
+
+.reference-attempt-heading {
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.reference-attempt-heading h3 {
+  margin: 0.2rem 0 0;
+  font-size: 1.45rem;
+}
+
+.reference-badges,
+.reference-meta {
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.reference-badges > span,
+.reference-meta > span {
+  padding: 0.32rem 0.5rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  font:
+    0.65rem "DM Mono",
+    monospace;
+  text-transform: uppercase;
+}
+
+.reference-state.state-approved {
+  color: var(--acid);
+}
+
+.reference-attempt-grid {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.65fr) minmax(0, 1.35fr);
+  gap: 1rem;
+}
+
+.reference-attempt-copy {
+  min-width: 0;
+  display: grid;
+  align-content: start;
+  gap: 0.8rem;
+}
+
+.reference-prompt {
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  overflow: hidden;
+  background: #0e1210;
+}
+
+.reference-prompt summary {
+  padding: 0.7rem 0.8rem;
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.reference-prompt[open] summary {
+  border-bottom: 1px solid var(--line);
+}
+
+.reference-prompt pre {
+  max-height: 320px;
+  margin: 0;
+  padding: 0.8rem;
+  overflow: auto;
+  white-space: pre-wrap;
+  color: #cdd4cf;
+  font:
+    0.72rem/1.55 "DM Mono",
+    monospace;
+}
+
+.prompt-toolbar {
+  justify-content: space-between;
+  gap: 0.8rem;
+  padding: 0.6rem 0.8rem 0;
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
+.reference-import-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(180px, 0.55fr) auto;
+  align-items: end;
+  gap: 0.7rem;
+}
+
+.reference-import-form > label:first-child {
+  display: grid;
+  gap: 0.4rem;
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
+.reference-import-form textarea {
+  width: 100%;
+  padding: 0.62rem;
+  resize: vertical;
+  border: 1px solid var(--line-strong);
+  border-radius: 9px;
+  background: #0e1210;
+  color: var(--ink);
+}
+
+.reference-file-picker {
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  padding: 0.6rem;
+  overflow: hidden;
+  border: 1px dashed var(--line-strong);
+  border-radius: 9px;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 0.75rem;
+}
+
+.reference-file-picker span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.reference-file-picker input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.validation-summary {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.7rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  color: var(--muted);
+  font-size: 0.74rem;
+}
+
+.validation-summary > div {
+  gap: 0.4rem;
+  color: var(--acid);
+}
+
+.validation-summary > span {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.35rem;
+  color: var(--amber);
+}
+
+.approve-reference {
+  justify-self: start;
+}
+
+.approval-reference-image {
+  width: 100%;
+  max-height: 320px;
+  object-fit: contain;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+
+.reference-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  padding: 0.7rem;
+  border: 1px solid color-mix(in srgb, var(--amber) 45%, var(--line));
+  border-radius: 10px;
+  color: var(--amber);
+}
+
+.reference-warning > div {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.reference-warning span {
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.settings-reference-list {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.settings-reference-list > label {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.85rem;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  cursor: pointer;
+}
+
+.settings-reference-list > label:has(input:checked) {
+  border-color: color-mix(in srgb, var(--acid) 35%, var(--line));
+  background: color-mix(in srgb, var(--acid) 4%, transparent);
+}
+
+.settings-reference-list > label > span {
+  display: grid;
+  gap: 0.18rem;
+}
+
+.settings-reference-list small {
+  color: var(--muted);
+}
+
+.settings-reference-list input {
+  accent-color: var(--acid);
+}
+
+.settings-reference-list label > svg {
+  color: var(--acid);
+}
+
+@media (max-width: 980px) {
+  .reference-import-form {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .reference-import-form > label:first-child {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 760px) {
+  .reference-lock-gate,
+  .reference-attempt-heading,
+  .prompt-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .reference-overview-grid,
+  .reference-attempt-grid,
+  .reference-type-grid,
+  .locked-reference-card,
+  .reference-import-form {
+    grid-template-columns: 1fr;
+  }
+
+  .reference-import-form > label:first-child {
+    grid-column: auto;
+  }
+}

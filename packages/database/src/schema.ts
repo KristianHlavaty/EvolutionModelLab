@@ -172,6 +172,7 @@ export const historyEvents = sqliteTable(
     candidateId: text("candidate_id"),
     generationRoundId: text("generation_round_id"),
     manifestVersion: integer("manifest_version"),
+    referenceImageId: text("reference_image_id"),
     actor: text("actor"),
     createdAt: text("created_at").notNull(),
   },
@@ -304,6 +305,49 @@ export const evolutionMutations = sqliteTable(
   (table) => [
     index("evolution_mutations_child_idx").on(table.childCreatureId),
     index("evolution_mutations_parent_idx").on(table.parentCreatureId),
+  ],
+);
+
+export const referenceImages = sqliteTable(
+  "reference_images",
+  {
+    id: text("id").primaryKey(),
+    creatureProjectId: text("creature_project_id")
+      .notNull()
+      .references(() => creatureProjects.id, { onDelete: "restrict" }),
+    designLockId: text("design_lock_id")
+      .notNull()
+      .references(() => designLocks.id, { onDelete: "restrict" }),
+    referenceType: text("reference_type").notNull(),
+    status: text("status").notNull().default("REQUESTED"),
+    generatedPrompt: text("generated_prompt").notNull(),
+    promptPath: text("prompt_path").notNull(),
+    contextPath: text("context_path").notNull(),
+    imagePath: text("image_path"),
+    thumbnailPath: text("thumbnail_path"),
+    originalFilename: text("original_filename"),
+    notes: text("notes").notNull().default(""),
+    validation: text("validation").notNull().default("{}"),
+    width: integer("width"),
+    height: integer("height"),
+    hasAlpha: integer("has_alpha", { mode: "boolean" }),
+    fileHash: text("file_hash"),
+    mimeType: text("mime_type"),
+    approved: integer("approved", { mode: "boolean" }).notNull().default(false),
+    actor: text("actor"),
+    createdAt: text("created_at").notNull(),
+    updatedAt: text("updated_at").notNull(),
+    approvedAt: text("approved_at"),
+  },
+  (table) => [
+    index("reference_images_creature_idx").on(table.creatureProjectId),
+    index("reference_images_lock_type_idx").on(
+      table.designLockId,
+      table.referenceType,
+    ),
+    index("reference_images_status_idx").on(table.status),
+    uniqueIndex("reference_images_prompt_path_unique").on(table.promptPath),
+    uniqueIndex("reference_images_image_path_unique").on(table.imagePath),
   ],
 );
 

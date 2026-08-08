@@ -29,6 +29,13 @@
       "when": 1785960000000,
       "tag": "0003_milestone_four",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1786132800000,
+      "tag": "0004_milestone_five",
+      "breakpoints": true
     }
   ]
 }

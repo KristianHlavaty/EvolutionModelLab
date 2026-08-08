@@ -29,13 +29,16 @@ import {
 } from "@eml/prompt-builder";
 import {
   candidateFeedbackInputSchema,
+  type ApproveReferenceInput,
   type CandidateFeedbackInput,
   type CreateDescendantInput,
+  type CreateReferenceInput,
   createCreatureInputSchema,
   type ContactSheetLayoutInput,
   type CandidateSource,
   type CreateCreatureInput,
   type DesignManifestInput,
+  type ProjectReferenceSettingsInput,
 } from "@eml/shared";
 import { and, asc, desc, eq, isNull, ne } from "drizzle-orm";
 
@@ -58,6 +61,13 @@ import {
   resolveWithin,
   toRepositoryRelative,
 } from "./paths.js";
+import {
+  ReferenceWorkflow,
+  type ProjectReferenceSettingsView,
+  type ReferenceContextView,
+  type ReferenceFileInput,
+  type ReferenceImageView,
+} from "./references.js";
 
 export interface ServiceOptions {
   repositoryRoot: string;
@@ -315,6 +325,7 @@ export class EvolutionModelLabService {
   private readonly database: DatabaseHandle;
   private readonly design: DesignWorkflow;
   private readonly evolution: EvolutionWorkflow;
+  private readonly references: ReferenceWorkflow;
   private readonly limits: ImageLimits;
   private readonly maximumFilesPerImport: number;
 
@@ -359,6 +370,12 @@ export class EvolutionModelLabService {
       this.workspaceRoot,
       this.limits,
       this.design,
+    );
+    this.references = new ReferenceWorkflow(
+      this.database.db,
+      this.repositoryRoot,
+      this.workspaceRoot,
+      this.limits,
     );
   }
 
@@ -2007,6 +2024,50 @@ export class EvolutionModelLabService {
       input,
     );
     return this.getCreature(created.creatureId);
+  }
+
+  getReferenceContext(creatureId: string): ReferenceContextView {
+    return this.references.getContext(creatureId);
+  }
+
+  async createReference(
+    creatureId: string,
+    input: CreateReferenceInput,
+  ): Promise<ReferenceImageView> {
+    return this.references.createReference(creatureId, input);
+  }
+
+  async importReference(
+    referenceId: string,
+    file: ReferenceFileInput,
+    notes: string,
+    actor: string,
+  ): Promise<ReferenceImageView> {
+    return this.references.importReference(referenceId, file, notes, actor);
+  }
+
+  async approveReference(
+    referenceId: string,
+    input: ApproveReferenceInput,
+  ): Promise<ReferenceImageView> {
+    return this.references.approveReference(referenceId, input);
+  }
+
+  getReferenceMedia(
+    referenceId: string,
+    kind: "image" | "thumbnail",
+  ): { path: string; mimeType: string } {
+    return this.references.getMedia(referenceId, kind);
+  }
+
+  getReferenceSettings(): ProjectReferenceSettingsView {
+    return this.references.getSettings();
+  }
+
+  updateReferenceSettings(
+    input: ProjectReferenceSettingsInput,
+  ): ProjectReferenceSettingsView {
+    return this.references.updateSettings(input);
   }
 
   setCandidateRejected(candidateId: string, rejected: boolean): void {

@@ -52,3 +52,28 @@ export const evolutionMutationCategories = [
 
 export type EvolutionMutationCategory =
   (typeof evolutionMutationCategories)[number];
+
+export const referenceTypes = [
+  "LOCKED_DESIGN",
+  "SIDE_PROFILE",
+  "OPPOSITE_SIDE",
+  "FRONT",
+  "THREE_QUARTER",
+  "TOP",
+  "SILHOUETTE",
+  "COLOUR_MATERIAL",
+  "ANATOMY_DIAGRAM",
+] as const;
+
+export type ReferenceType = (typeof referenceTypes)[number];
+
+export const requestableReferenceTypes = [
+  "SIDE_PROFILE",
+  "OPPOSITE_SIDE",
+  "FRONT",
+  "THREE_QUARTER",
+  "TOP",
+  "SILHOUETTE",
+  "COLOUR_MATERIAL",
+  "ANATOMY_DIAGRAM",
+] as const satisfies readonly Exclude<ReferenceType, "LOCKED_DESIGN">[];
