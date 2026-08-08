@@ -7,7 +7,6 @@ import {
   Clipboard,
   Copy,
   Dna,
-  FlaskConical,
   FolderOpen,
   GitBranch,
   History,
@@ -51,6 +50,7 @@ import {
 import { EvolutionPage } from "./MilestoneFour.tsx";
 import { ReferencesPage, ReferenceSettingsPage } from "./MilestoneFive.tsx";
 import { AnimationLabPage, AnimationsPage } from "./MilestoneSix.tsx";
+import { ExportPage } from "./MilestoneSeven.tsx";
 import { PromptHistoryPage, RoundWorkspacePage } from "./MilestoneTwo.tsx";
 import type { Candidate, Creature, DashboardData, Round } from "./types.ts";
 
@@ -621,6 +621,18 @@ function CreatureDetailPage() {
             >
               <BookOpenCheck size={16} /> References
             </Link>
+            <Link
+              className="button secondary"
+              to={`/creatures/${creature.id}/animations`}
+            >
+              <Activity size={16} /> Animations
+            </Link>
+            <Link
+              className="button secondary"
+              to={`/creatures/${creature.id}/export`}
+            >
+              <FolderOpen size={16} /> Export
+            </Link>
             <span
               className={`status-pill large status-${creature.status.toLowerCase()}`}
             >
@@ -697,12 +709,18 @@ function CreatureDetailPage() {
                   : creature.status === "REFERENCE_BUILDING"
                     ? "Complete mandatory references"
                     : creature.status === "REFERENCE_APPROVED"
-                      ? "Reference gate satisfied"
-                      : creature.status === "CONCEPT"
-                        ? "Import concept images"
-                        : creature.status === "REFINING"
-                          ? "Import refinement images"
-                          : "Selection saved"}
+                      ? "Start an animation"
+                      : creature.status === "ANIMATING"
+                        ? "Continue the animation"
+                        : creature.status === "ANIMATION_REVIEW"
+                          ? "Validate and export"
+                          : creature.status === "GAME_READY"
+                            ? "Review versioned exports"
+                            : creature.status === "CONCEPT"
+                              ? "Import concept images"
+                              : creature.status === "REFINING"
+                                ? "Import refinement images"
+                                : "Selection saved"}
               </h2>
               <p>
                 {creature.status === "DESIGN_LOCKED"
@@ -710,12 +728,18 @@ function CreatureDetailPage() {
                   : creature.status === "REFERENCE_BUILDING"
                     ? "Import and explicitly approve every project-mandatory view for this exact design lock."
                     : creature.status === "REFERENCE_APPROVED"
-                      ? "All mandatory canonical views are approved for this design lock."
-                      : creature.status === "CONCEPT"
-                        ? "Add one to ten PNG results and review the numbered gallery."
-                        : creature.status === "REFINING"
-                          ? "Import refinements, compare them, and select the next parent."
-                          : "Record structured feedback and create the next refinement round."}
+                      ? "All mandatory canonical views are approved. Create a reference-anchored sequence."
+                      : creature.status === "ANIMATING"
+                        ? "Import real key poses and intermediates, then review playback and continuity."
+                        : creature.status === "ANIMATION_REVIEW"
+                          ? "Review the validation report and create a non-overwriting generic package when ready."
+                          : creature.status === "GAME_READY"
+                            ? "The latest package is complete and earlier export versions remain preserved."
+                            : creature.status === "CONCEPT"
+                              ? "Add one to ten PNG results and review the numbered gallery."
+                              : creature.status === "REFINING"
+                                ? "Import refinements, compare them, and select the next parent."
+                                : "Record structured feedback and create the next refinement round."}
               </p>
               <Link
                 className="button primary full"
@@ -726,7 +750,15 @@ function CreatureDetailPage() {
                     "REFERENCE_APPROVED",
                   ].includes(creature.status)
                     ? `/creatures/${creature.id}/references`
-                    : `/creatures/${creature.id}/rounds/${creature.currentRound.id}`
+                    : ["REFERENCE_APPROVED", "ANIMATING"].includes(
+                          creature.status,
+                        )
+                      ? `/creatures/${creature.id}/animations`
+                      : ["ANIMATION_REVIEW", "GAME_READY"].includes(
+                            creature.status,
+                          )
+                        ? `/creatures/${creature.id}/export`
+                        : `/creatures/${creature.id}/rounds/${creature.currentRound.id}`
                 }
               >
                 {[
@@ -736,6 +768,18 @@ function CreatureDetailPage() {
                 ].includes(creature.status) ? (
                   <>
                     <BookOpenCheck size={17} /> Open references
+                  </>
+                ) : ["REFERENCE_APPROVED", "ANIMATING"].includes(
+                    creature.status,
+                  ) ? (
+                  <>
+                    <Activity size={17} /> Open Animation Lab
+                  </>
+                ) : ["ANIMATION_REVIEW", "GAME_READY"].includes(
+                    creature.status,
+                  ) ? (
+                  <>
+                    <FolderOpen size={17} /> Open validation and export
                   </>
                 ) : (
                   <>
@@ -1107,36 +1151,6 @@ function CandidateCard({
   );
 }
 
-function FutureFeaturePage({
-  title,
-  milestone,
-}: {
-  title: string;
-  milestone: string;
-}) {
-  return (
-    <div className="page narrow-page">
-      <PageHeader
-        eyebrow="Planned capability"
-        title={title}
-        description={`This surface is intentionally deferred to ${milestone}. Milestone 2 does not expose non-functional actions.`}
-      />
-      <div className="panel future-panel">
-        <FlaskConical size={34} />
-        <h2>The foundation is ready</h2>
-        <p>
-          Creature state, immutable originals, prompts, and history are already
-          arranged for this module. Implementation will follow the gated project
-          plan.
-        </p>
-        <Link className="button secondary" to="/">
-          Return to overview
-        </Link>
-      </div>
-    </div>
-  );
-}
-
 export function App() {
   return (
     <AppShell>
@@ -1178,15 +1192,7 @@ export function App() {
           path="/creatures/:creatureId/animations/:animationId"
           element={<AnimationLabPage />}
         />
-        <Route
-          path="/creatures/:creatureId/export"
-          element={
-            <FutureFeaturePage
-              title="Game-ready export"
-              milestone="Milestone 7"
-            />
-          }
-        />
+        <Route path="/creatures/:creatureId/export" element={<ExportPage />} />
         <Route path="/settings" element={<ReferenceSettingsPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

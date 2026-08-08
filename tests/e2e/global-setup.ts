@@ -12,7 +12,12 @@ async function prepareE2eWorkspace(): Promise<void> {
   const relation = relative(resolve(repositoryRoot, ".tmp"), e2eRoot);
   if (relation !== "e2e")
     throw new Error(`Refusing unsafe E2E cleanup: ${e2eRoot}`);
-  await rm(e2eRoot, { recursive: true, force: true });
+  await rm(e2eRoot, {
+    recursive: true,
+    force: true,
+    maxRetries: 20,
+    retryDelay: 250,
+  });
   const fixtureRoot = resolve(e2eRoot, "fixtures");
   await mkdir(fixtureRoot, { recursive: true });
   await writeFile(

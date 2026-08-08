@@ -400,3 +400,64 @@ export interface Animation {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface ValidationAnimation {
+  id: string;
+  name: string;
+  animationType: string;
+  status: string;
+  currentDesign: boolean;
+  expectedFrameCount: number;
+  activeFrameCount: number;
+  warningFrameCount: number;
+  pendingRepairCount: number;
+  messages: Array<{
+    frameId: string;
+    frameNumber: number;
+    messages: string[];
+  }>;
+}
+
+export interface ValidationReport {
+  creatureId: string;
+  creatureName: string;
+  generatedAt: string;
+  currentDesignLockId: string | null;
+  missingMandatoryReferences: string[];
+  referencesApproved: number;
+  animations: ValidationAnimation[];
+  approvedAnimationCount: number;
+  warningCount: number;
+  blockingIssues: string[];
+  readyForExport: boolean;
+}
+
+export interface ExportSummary {
+  exportId: string;
+  version: number;
+  format: string;
+  creatureId: string;
+  creatureName: string;
+  createdAt: string;
+  packagePath: string;
+  animationCount: number;
+  referenceCount: number;
+  frameCount: number;
+  warningCount: number;
+  includePromptHistory: boolean;
+  files: string[];
+}
+
+export interface ExportRun {
+  id: string;
+  creatureProjectId: string;
+  designLockId: string;
+  version: number;
+  exportFormat: string;
+  status: string;
+  packagePath: string;
+  includePromptHistory: boolean;
+  actor: string | null;
+  createdAt: string;
+  summary: ExportSummary;
+}

@@ -4,6 +4,7 @@ import {
   animationTypes,
   candidateSources,
   evolutionMutationCategories,
+  exportFormats,
   frameRoles,
   referenceTypes,
   requestableReferenceTypes,
@@ -156,6 +157,15 @@ export type UpdateAnimationFrameInput = z.input<
 >;
 export type RepairPromptInput = z.input<typeof repairPromptInputSchema>;
 export type ApproveAnimationInput = z.input<typeof approveAnimationInputSchema>;
+
+export const exportCreatureInputSchema = z.object({
+  exportFormat: z.enum(exportFormats).default("GENERIC"),
+  includePromptHistory: z.boolean().default(true),
+  confirmed: z.boolean().default(false),
+  actor: z.string().trim().min(1).max(120).default("LOCAL_USER"),
+});
+
+export type ExportCreatureInput = z.input<typeof exportCreatureInputSchema>;
 
 export const createConceptRoundInputSchema = z.object({
   creatureId: z.uuid(),

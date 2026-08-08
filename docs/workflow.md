@@ -21,7 +21,7 @@ The complete intended state sequence is:
 
 The application must never skip a gated state silently. Unlocking, locking, reference approval, animation approval, and export require explicit confirmation in the milestone that implements them.
 
-## Rules enforced through Milestone 6
+## Rules enforced through Milestone 7
 
 - A concept round can only be created from `DRAFT`.
 - A concept round is immutable and saves its own prompt/context files.
@@ -71,3 +71,10 @@ The application must never skip a gated state silently. Unlocking, locking, refe
 - Intermediate prompts require at least two active key poses and use them as fixed endpoints while preserving the frozen identity and production constraints.
 - Repair prompts require a marked frame and request exactly one targeted replacement. The replacement is a new active revision that points to the old frame; the old row and original bytes remain preserved.
 - Animation approval requires explicit confirmation, the exact current design lock and mandatory reference set, exactly the configured active-frame count, and no pending repair flags.
+- Export readiness is derived from the current active design lock, the current mandatory reference set, and at least one approved/current animation. Historical or stale approvals cannot satisfy the gate.
+- Every export requires explicit confirmation and creates a new monotonic creature-scoped version. Existing export directories and database rows are never reused or overwritten.
+- Locked designs, canonical references, and numbered animation-frame originals are copied byte-for-byte into the package. Sprite sheets are separate derived artifacts created by the selected exporter adapter.
+- Generic animation metadata records frame order and rectangles, FPS, looping, per-frame duration, anchor, canvas, and validation evidence. Sheet dimensions and total pixels are guarded before composition.
+- Creature, evolution, validation, and summary JSON are frozen in every package. Prompt history is included only by explicit choice.
+- Filesystem work is staged in a new exclusive directory. Failure cleanup targets only that attempt; previous packages and source originals are never removed.
+- A successful package appends export-owned history, marks included animations `EXPORTED`, sets the creature `GAME_READY`, and remains visible after restart.

@@ -2,7 +2,7 @@
 
 Evolution Model Lab is a local-first workspace for AI-assisted creature design. It stores creature briefs, deterministic ChatGPT prompts, imported concept candidates, durable selection state, and recoverable history without calling an image-generation API.
 
-Milestone 5 is the current release. It adds canonical-reference types, one-view deterministic prompts, immutable import attempts, content validation, explicit approvals, design-lock-aware staleness, and configurable mandatory-reference rules. ChatGPT remains a manual handoff: the application builds and saves prompts but does not call an image-generation API.
+Milestone 7 is the current release. It adds persisted export-readiness reports and explicitly confirmed, immutable generic game packages containing the locked design, approved references, original animation frames, derived sprite sheets, and JSON metadata. ChatGPT remains a manual handoff: the application builds and saves prompts but does not call an image-generation API.
 
 > Screenshot placeholder: screenshots will be captured after the visual-review workflow stabilizes.
 
@@ -18,7 +18,7 @@ There is no nested repository folder. Runtime state remains inside this reposito
 
 - SQLite database: `data/evolution-model-lab.db`
 - Creature originals, contact-sheet originals, derived crops, thumbnails, prompts, active locked references, and immutable manifest/reference history: `workspace/creatures/`
-- Future game-ready packages: `exports/`
+- Versioned, immutable game-ready packages: `exports/<creature-slug>/export-vNNN/`
 
 These runtime files are ignored by Git. Imported originals are never modified or overwritten; generated thumbnails are stored separately.
 
@@ -83,6 +83,8 @@ Open [http://127.0.0.1:5173](http://127.0.0.1:5173). The single `pnpm dev` comma
 29. Play at 0.25Ă—, 0.5Ă—, 1Ă—, or 2Ă— speed. Use previous/next onion skins, the locked-reference overlay, and bounds/center/anchor guides to inspect continuity without changing original pixels.
 30. Save an intermediate prompt after at least two key poses. Mark a broken frame before saving a targeted repair prompt; importing its replacement creates a new revision while preserving the broken original in history.
 31. Explicitly approve only when the exact expected frame count is active, the current reference gate still holds, and no frame remains marked for repair.
+32. Open **Export**, review every blocking issue and warning, then choose **Review new export**. The confirmation identifies the next immutable version and whether prompt history will be included.
+33. A successful generic export copies authoritative originals unchanged, creates derived sprite sheets and metadata, and records the package under a new `export-vNNN` directory. Prior versions remain available in export history and are never overwritten.
 
 ## Commands
 
@@ -95,7 +97,7 @@ pnpm format:check     # verify formatting
 pnpm lint             # ESLint
 pnpm typecheck        # strict TypeScript checks
 pnpm test             # Vitest unit/integration tests
-pnpm test:e2e         # Playwright workflows through animation approval
+pnpm test:e2e         # production-backed Playwright workflows through export
 pnpm build            # production compile/build check
 pnpm db:migrate       # apply committed Drizzle migrations
 pnpm db:generate      # generate a migration after an intentional schema change
@@ -120,4 +122,4 @@ When MCP is implemented, it will use the same `packages/core` application servic
 
 ## Current limitations
 
-Exports, MCP, ChatGPT integration, and plugin skills remain intentionally pending later milestones. Reference validation proves file integrity and records canvas/transparency warnings; semantic identity matching still requires explicit human approval. Animation continuity checks are image heuristics rather than anatomy recognition, and the app imports finished PNG frames rather than generating or interpolating motion. Evolution currently models one approved parent per descendant; mutations are frozen when the descendant is created, and ancestor/descendant comparison is side-by-side. Local history actors are recorded as `LOCAL_USER` or `SYSTEM`; authentication and named-user identity are not implemented. Contact-sheet import supports PNG grids with explicit rows, columns, outer margins, and horizontal/vertical gaps; it does not guess irregular cell boundaries. See [docs/implementation-plan.md](docs/implementation-plan.md) for exact status and limitations.
+MCP, ChatGPT integration, and plugin skills remain intentionally pending later milestones. The current exporter provides a generic sprite package rather than engine-specific import metadata. Reference and export validation prove file integrity and record mechanical warnings; semantic identity matching still requires explicit human approval. Animation continuity checks are image heuristics rather than anatomy recognition, and the app imports finished PNG frames rather than generating or interpolating motion. Evolution currently models one approved parent per descendant; mutations are frozen when the descendant is created, and ancestor/descendant comparison is side-by-side. Local history actors are recorded as `LOCAL_USER` or `SYSTEM`; authentication and named-user identity are not implemented. Contact-sheet import supports PNG grids with explicit rows, columns, outer margins, and horizontal/vertical gaps; it does not guess irregular cell boundaries. See [docs/implementation-plan.md](docs/implementation-plan.md) for exact status and limitations.

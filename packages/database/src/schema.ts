@@ -176,6 +176,7 @@ export const historyEvents = sqliteTable(
     referenceImageId: text("reference_image_id"),
     animationId: text("animation_id"),
     animationFrameId: text("animation_frame_id"),
+    exportRunId: text("export_run_id"),
     actor: text("actor"),
     createdAt: text("created_at").notNull(),
   },
@@ -453,6 +454,38 @@ export const animationPrompts = sqliteTable(
   (table) => [
     index("animation_prompts_animation_idx").on(table.animationId),
     uniqueIndex("animation_prompts_path_unique").on(table.promptPath),
+  ],
+);
+
+export const exportRuns = sqliteTable(
+  "export_runs",
+  {
+    id: text("id").primaryKey(),
+    creatureProjectId: text("creature_project_id")
+      .notNull()
+      .references(() => creatureProjects.id, { onDelete: "restrict" }),
+    designLockId: text("design_lock_id")
+      .notNull()
+      .references(() => designLocks.id, { onDelete: "restrict" }),
+    version: integer("version").notNull(),
+    exportFormat: text("export_format").notNull(),
+    status: text("status").notNull().default("COMPLETE"),
+    exportPath: text("export_path").notNull(),
+    summaryPath: text("summary_path").notNull(),
+    summary: text("summary").notNull(),
+    includePromptHistory: integer("include_prompt_history", { mode: "boolean" })
+      .notNull()
+      .default(true),
+    actor: text("actor"),
+    createdAt: text("created_at").notNull(),
+  },
+  (table) => [
+    index("export_runs_creature_idx").on(table.creatureProjectId),
+    uniqueIndex("export_runs_creature_version_unique").on(
+      table.creatureProjectId,
+      table.version,
+    ),
+    uniqueIndex("export_runs_path_unique").on(table.exportPath),
   ],
 );
 

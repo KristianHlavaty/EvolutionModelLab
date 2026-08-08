@@ -12,19 +12,19 @@
 
 Evolution Model Lab is a local-first creature design workspace. ChatGPT supplies images through ordinary conversations; this application persists project state, builds prompts, imports and validates user-provided images, and maintains recoverable history. It does not call paid image-generation APIs and never pretends to generate images.
 
-The current release implements **Milestone 5**, building on locked designs and persisted lineage. Canonical references are enabled only through design-lock-aware request, import, validation, and explicit approval gates; animation, export, MCP, and ChatGPT plugin surfaces remain disabled or clearly documented as later work.
+The current release implements **Milestone 7**, building on locked designs, canonical references, and reviewed animation sequences. Persisted readiness reports and explicitly confirmed, immutable generic game packages are enabled; MCP and ChatGPT plugin surfaces remain disabled or clearly documented as later work.
 
 ## Module boundaries
 
-- `apps/web`: React/Vite interface, routing, uploads, numbered gallery, feedback/manifest/mutation editors, candidate and lineage comparison, persisted evolution tree, canonical-reference request/import/approval UI, mandatory-reference settings, lock/unlock confirmations, prompt history, and contact-sheet preview/confirmation.
+- `apps/web`: React/Vite interface, routing, uploads, numbered gallery, feedback/manifest/mutation editors, candidate and lineage comparison, persisted evolution tree, canonical-reference and Animation Lab workflows, readiness reports, immutable export history, lock/unlock confirmations, prompt history, and contact-sheet preview/confirmation.
 - `apps/server`: localhost Express transport, request parsing, error mapping, and exact guarded media responses.
-- `apps/mcp-server`: reserved application boundary for the later Streamable HTTP MCP server; no MCP SDK is installed through Milestone 4.
-- `packages/core`: reusable workflow/application services, including manifest versioning, design-lock rules, approved-parent evolution branching, lineage reads, ordered mutations, canonical-reference integrity/approval, and mandatory-rule evaluation, used by REST and future MCP adapters.
+- `apps/mcp-server`: reserved application boundary for the later Streamable HTTP MCP server; no MCP SDK is installed through Milestone 7.
+- `packages/core`: reusable workflow/application services, including manifest versioning, design-lock rules, approved-parent evolution branching, lineage reads, ordered mutations, canonical-reference integrity/approval, animation review, validation reporting, and versioned export orchestration, used by REST and future MCP adapters.
 - `packages/database`: SQLite connection, Drizzle schema, migrations, and database lifecycle.
 - `packages/shared`: Zod request/response contracts and shared domain constants.
 - `packages/image-processing`: PNG inspection, SHA-256 hashing, deterministic grid geometry, derived crop creation, and thumbnails.
 - `packages/prompt-builder`: deterministic concept and refinement prompt construction.
-- `packages/sprite-exporter`: reserved for later game-ready exports.
+- `packages/sprite-exporter`: format-neutral exporter contract and generic transparent sprite-sheet adapter with guarded sheet limits and deterministic frame rectangles.
 - `packages/test-fixtures`: deterministic PNG fixture generation for tests.
 
 Transport handlers must not reimplement workflow rules. REST handlers call `packages/core`; the future MCP handlers will call the same services.
@@ -128,7 +128,7 @@ The table deliberately permits multiple historical attempts of one type while co
 | 4         | Evolution lineage and mutations                      | Completed |
 | 5         | Canonical references and approval gates              | Completed |
 | 6         | Animation Lab and repair workflow                    | Completed |
-| 7         | Validation and game-ready export                     | Pending   |
+| 7         | Validation and game-ready export                     | Completed |
 | 8         | Streamable HTTP MCP server and tools                 | Pending   |
 | 9         | ChatGPT Developer Mode integration and handoff spike | Pending   |
 | 10        | Skills, evaluations, and optional ChatGPT UI         | Pending   |
@@ -309,9 +309,44 @@ The core suite additionally verifies the reference gate, frozen lock/manifest pr
 
 Manual in-app browser QA inspected the persisted approved sequence at desktop and 700-pixel widths. Playback controls, frame review, validation warnings, checkerboard stage, frame strip, and prompt/approval surfaces remained readable, and the narrow layout had no horizontal overflow. The responsive override was reset, the browser tab finalized, and isolated QA services stopped afterward.
 
+## Milestone 7 acceptance criteria
+
+- [x] A persisted readiness report derives blockers and warnings from the current design lock, mandatory canonical references, approved/current animations, frame counts, repair flags, and recorded frame warnings.
+- [x] Export requires explicit confirmation and rejects creatures whose current authoritative lock, mandatory reference set, or approved animation gate is incomplete.
+- [x] `0006_milestone_seven.sql` additively records immutable export runs, creature-scoped version numbers, generic format, status, guarded relative package/summary paths, frozen summary JSON, prompt-history choice, actor, and history ownership.
+- [x] Every export uses a new exclusive `exports/<creature-slug>/export-vNNN` directory and never overwrites an earlier version; failed staging cleanup is limited to the newly created attempt.
+- [x] The generic adapter copies the verified locked design, approved canonical reference originals, and numbered animation-frame originals byte-for-byte, while derived sprite sheets are produced separately.
+- [x] Each animation package contains deterministic frame rectangles, timing, loop/FPS/anchor/canvas metadata, validation context, and a transparent sprite sheet bounded by explicit maximum dimensions and pixels.
+- [x] Creature, evolution, validation, and export-summary manifests are included; prompt history is included only when explicitly selected.
+- [x] Successful export records the immutable package summary and history, moves included animations to `EXPORTED`, moves the creature to `GAME_READY`, and remains discoverable after restart.
+- [x] The responsive export page shows blockers, warnings, per-animation evidence, an explicit confirmation dialog, package contents, copyable relative paths, and prior immutable versions.
+- [x] Unit/integration and Playwright coverage exercise readiness gates, confirmation, byte preservation, derived sheets, optional prompt history, monotonic versions, reload persistence, and the complete earlier workflow.
+
+## Milestone 7 test status
+
+Final verification on 2026-08-08:
+
+| Command                          | Result                                                                                                                 |
+| -------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `corepack pnpm format:check`     | Passed; every matched file uses Prettier style                                                                         |
+| `corepack pnpm lint`             | Passed; 0 ESLint errors                                                                                                |
+| `corepack pnpm typecheck`        | Passed; packages, server, web, and the sprite exporter compile in strict mode                                          |
+| `corepack pnpm test`             | Passed; 9 files and 36 Vitest unit/integration tests                                                                   |
+| `corepack pnpm test:e2e`         | Passed; 6 production-backed Playwright workflows through persistent generic export                                     |
+| `corepack pnpm build`            | Passed; packages/server compiled and Vite transformed 1,680 modules                                                    |
+| Manual primary workflow exercise | Passed; readiness, warnings, package history, desktop and 700-pixel layouts, preview proxy, and no horizontal overflow |
+
+The Milestone 7 Playwright workflow reuses the fully approved eight-frame creature, reviews its stored readiness evidence and warnings, explicitly confirms a generic export, verifies the version, package contents, frame count, and guarded relative path, then reloads and confirms that the immutable export remains listed. All earlier browser workflows remain green.
+
+The core suite additionally verifies confirmation and readiness failures, monotonic `export-v001`/`export-v002` creation, byte-identical original copies, sprite-sheet dimensions and rectangles, optional prompt-history omission, frozen validation/summary manifests, `GAME_READY` state, and non-overwrite behavior.
+
+Manual in-app browser QA inspected the persisted export report and completed package at desktop and 700-pixel widths. The narrow layout had no horizontal overflow. QA also found and fixed production-preview API proxy parity, after which the page loaded persisted data without errors; the responsive override was reset and isolated QA services were stopped.
+
 ## Known limitations
 
-- Export, MCP, ChatGPT integration, and plugin skills remain deferred to their planned milestones.
+- MCP, ChatGPT integration, and plugin skills remain deferred to their planned milestones.
+- Milestone 7 ships one `GENERIC` sprite-package adapter. Engine-specific pivots, import metadata, atlases, and runtime integration remain future adapter work.
+- Export validation combines persisted workflow gates and image heuristics; it does not claim semantic anatomy or identity recognition.
 - Animation continuity checks are practical image heuristics, not semantic anatomy or identity recognition. Warnings require human review and do not auto-reject a frame.
 - Milestone 6 imports finished PNG frames; it does not generate motion, interpolate frames, or integrate a game engine.
 - Reference validation proves file integrity and records canvas/transparency checks; visual anatomy, identity, palette, and material consistency still require explicit human review.

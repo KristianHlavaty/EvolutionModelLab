@@ -126,6 +126,9 @@ importers:
       '@eml/shared':
         specifier: workspace:*
         version: link:../shared
+      '@eml/sprite-exporter':
+        specifier: workspace:*
+        version: link:../sprite-exporter
       drizzle-orm:
         specifier: ^0.44.4
         version: 0.44.7(@types/better-sqlite3@7.6.13)(better-sqlite3@12.11.1)
@@ -163,7 +166,11 @@ importers:
         specifier: ^4.0.14
         version: 4.4.3
 
-  packages/sprite-exporter: {}
+  packages/sprite-exporter:
+    dependencies:
+      sharp:
+        specifier: ^0.34.3
+        version: 0.34.5
 
   packages/test-fixtures: {}
 

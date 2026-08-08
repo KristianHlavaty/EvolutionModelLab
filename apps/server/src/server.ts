@@ -17,6 +17,7 @@ import {
   createCreatureInputSchema,
   designManifestInputSchema,
   destructiveActionInputSchema,
+  exportCreatureInputSchema,
   lockDesignInputSchema,
   importReferenceMetadataSchema,
   projectReferenceSettingsInputSchema,
@@ -62,7 +63,7 @@ export function createApp(service: EvolutionModelLabService): express.Express {
   app.use(express.json({ limit: "1mb" }));
 
   app.get("/api/health", (_request, response) => {
-    response.json({ ok: true, service: "Evolution Model Lab", milestone: 6 });
+    response.json({ ok: true, service: "Evolution Model Lab", milestone: 7 });
   });
 
   app.get("/api/dashboard", (_request, response) => {
@@ -311,6 +312,35 @@ export function createApp(service: EvolutionModelLabService): express.Express {
     const input = approveAnimationInputSchema.parse(request.body);
     response.json({ data: service.approveAnimation(animationId, input) });
   });
+
+  app.get(
+    "/api/creatures/:creatureId/validation-report",
+    (request, response) => {
+      const creatureId = uuidParameterSchema.parse(request.params.creatureId);
+      const animationId = request.query.animationId
+        ? uuidParameterSchema.parse(request.query.animationId)
+        : undefined;
+      response.json({
+        data: service.getValidationReport(creatureId, animationId),
+      });
+    },
+  );
+
+  app.get("/api/creatures/:creatureId/exports", (request, response) => {
+    const creatureId = uuidParameterSchema.parse(request.params.creatureId);
+    response.json({ data: service.listExports(creatureId) });
+  });
+
+  app.post(
+    "/api/creatures/:creatureId/exports",
+    asyncRoute(async (request, response) => {
+      const creatureId = uuidParameterSchema.parse(request.params.creatureId);
+      const input = exportCreatureInputSchema.parse(request.body);
+      response.status(201).json({
+        data: await service.exportCreature(creatureId, input),
+      });
+    }),
+  );
 
   app.post(
     "/api/creatures/:creatureId/rounds/concept",

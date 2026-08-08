@@ -2551,6 +2551,237 @@ select:focus-visible,
   }
 }
 
+/* Milestone 7: validation and generic export */
+.export-readiness,
+.export-action-panel,
+.export-run-heading,
+.validation-animation-heading,
+.modal-heading {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.export-readiness > div:first-of-type,
+.export-action-panel > div,
+.export-run-heading > div:first-child,
+.validation-animation-heading > div,
+.modal-heading > div {
+  flex: 1;
+}
+
+.export-readiness.ready > svg {
+  color: var(--acid);
+}
+.export-readiness.blocked > svg {
+  color: var(--amber);
+}
+
+.readiness-stats,
+.validation-stats,
+.export-run-counts,
+.export-confirm-grid {
+  display: grid;
+  grid-template-columns: repeat(3, auto);
+  gap: 0.6rem;
+}
+
+.readiness-stats span,
+.validation-stats span,
+.export-run-counts span,
+.export-confirm-grid span {
+  display: grid;
+  gap: 0.1rem;
+  min-width: 100px;
+  padding: 0.6rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: 0.68rem;
+}
+
+.readiness-stats strong,
+.validation-stats strong,
+.export-confirm-grid strong {
+  color: var(--ink);
+  font-family: var(--display);
+  font-size: 1.05rem;
+}
+
+.readiness-stats .has-warning strong {
+  color: var(--amber);
+}
+
+.blocking-list,
+.export-history,
+.validation-animation,
+.export-run,
+.export-confirmation {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.blocking-list > div {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--amber);
+}
+
+.validation-animation-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1rem;
+}
+
+.validation-animation-heading {
+  align-items: flex-start;
+}
+
+.validation-animation-heading h2,
+.export-run-heading h2 {
+  margin-top: 0.45rem;
+}
+
+.validation-stats {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.validation-stats span {
+  min-width: 0;
+}
+
+.validation-animation details,
+.export-run details {
+  border-top: 1px solid var(--line);
+  padding-top: 0.65rem;
+}
+
+.validation-animation summary,
+.export-run summary {
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 0.73rem;
+}
+
+.validation-message-list,
+.export-file-list {
+  display: grid;
+  gap: 0.55rem;
+  margin-top: 0.7rem;
+}
+
+.validation-message-list > div {
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.55rem;
+  border: 1px solid color-mix(in srgb, var(--amber) 35%, var(--line));
+  border-radius: 8px;
+}
+
+.validation-message-list span {
+  color: var(--muted);
+  font-size: 0.7rem;
+}
+
+.export-action-panel {
+  align-items: center;
+}
+
+.export-action-panel .check-label {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
+.export-run {
+  position: relative;
+}
+
+.export-run-heading {
+  justify-content: space-between;
+}
+
+.export-run-counts {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.export-run-counts span {
+  display: flex;
+  align-items: center;
+  min-width: auto;
+}
+
+.package-path {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #0b0e0c;
+}
+
+.package-path code {
+  flex: 1;
+  overflow-x: auto;
+  color: var(--acid);
+  font-size: 0.72rem;
+}
+
+.export-file-list code {
+  padding: 0.35rem 0.5rem;
+  overflow-x: auto;
+  border-left: 2px solid var(--line-strong);
+  color: var(--muted);
+  font-size: 0.68rem;
+}
+
+.export-confirmation {
+  max-width: 650px;
+}
+.export-confirm-grid {
+  grid-template-columns: repeat(2, 1fr);
+}
+.export-confirm-grid span {
+  min-width: 0;
+}
+
+@media (max-width: 900px) {
+  .export-readiness,
+  .export-action-panel,
+  .export-run-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .readiness-stats {
+    width: 100%;
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .export-run-counts {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 620px) {
+  .readiness-stats,
+  .validation-stats,
+  .export-confirm-grid {
+    grid-template-columns: 1fr;
+  }
+  .validation-animation-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .validation-animation-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Milestone 6: Animation Lab */
 .animation-gate,
 .animation-create,

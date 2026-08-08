@@ -9,7 +9,7 @@
     "node": ">=22.0.0"
   },
   "scripts": {
-    "build:packages": "corepack pnpm --filter @eml/shared build && corepack pnpm --filter @eml/database build && corepack pnpm --filter @eml/prompt-builder build && corepack pnpm --filter @eml/image-processing build && corepack pnpm --filter @eml/core build",
+    "build:packages": "corepack pnpm --filter @eml/shared build && corepack pnpm --filter @eml/database build && corepack pnpm --filter @eml/prompt-builder build && corepack pnpm --filter @eml/image-processing build && corepack pnpm --filter @eml/sprite-exporter build && corepack pnpm --filter @eml/core build",
     "predev": "corepack pnpm build:packages",
     "dev": "concurrently --kill-others --names server,web --prefix-colors cyan,magenta \"corepack pnpm dev:server\" \"corepack pnpm dev:web\"",
     "dev:web": "corepack pnpm --filter @eml/web dev",
@@ -21,7 +21,7 @@
     "lint": "eslint .",
     "typecheck": "corepack pnpm build:packages && corepack pnpm --filter @eml/server typecheck && corepack pnpm --filter @eml/web typecheck",
     "test": "corepack pnpm build:packages && vitest run --configLoader runner",
-    "test:e2e": "corepack pnpm build:packages && tsx tests/e2e/global-setup.ts && playwright test",
+    "test:e2e": "corepack pnpm build && tsx tests/e2e/global-setup.ts && playwright test",
     "build": "corepack pnpm build:packages && corepack pnpm --filter @eml/server build && corepack pnpm --filter @eml/web build",
     "db:generate": "corepack pnpm --filter @eml/database db:generate",
     "db:migrate": "corepack pnpm build:packages && corepack pnpm --filter @eml/database db:migrate"

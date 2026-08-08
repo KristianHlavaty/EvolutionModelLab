@@ -46,10 +46,16 @@ import {
   type ReorderAnimationFramesInput,
   type UpdateAnimationFrameInput,
   type FrameRole,
+  type ExportCreatureInput,
 } from "@eml/shared";
 import { and, asc, desc, eq, isNull, ne } from "drizzle-orm";
 
 import { AppError } from "./errors.js";
+import {
+  ExportWorkflow,
+  type ExportRunView,
+  type ValidationReportView,
+} from "./export.js";
 import {
   AnimationWorkflow,
   type AnimationFileInput,
@@ -339,6 +345,7 @@ export class EvolutionModelLabService {
   private readonly evolution: EvolutionWorkflow;
   private readonly references: ReferenceWorkflow;
   private readonly animation: AnimationWorkflow;
+  private readonly exporter: ExportWorkflow;
   private readonly limits: ImageLimits;
   private readonly maximumFilesPerImport: number;
 
@@ -396,6 +403,14 @@ export class EvolutionModelLabService {
       this.workspaceRoot,
       this.limits,
       this.references,
+    );
+    this.exporter = new ExportWorkflow(
+      this.database.db,
+      this.repositoryRoot,
+      this.workspaceRoot,
+      this.exportsRoot,
+      this.references,
+      this.animation,
     );
   }
 
@@ -2185,6 +2200,24 @@ export class EvolutionModelLabService {
     kind: "image" | "thumbnail",
   ): { path: string; mimeType: string } {
     return this.animation.getMedia(frameId, kind);
+  }
+
+  getValidationReport(
+    creatureId: string,
+    animationId?: string,
+  ): ValidationReportView {
+    return this.exporter.getValidationReport(creatureId, animationId);
+  }
+
+  listExports(creatureId: string): ExportRunView[] {
+    return this.exporter.list(creatureId);
+  }
+
+  exportCreature(
+    creatureId: string,
+    input: ExportCreatureInput,
+  ): Promise<ExportRunView> {
+    return this.exporter.create(creatureId, input);
   }
 
   setCandidateRejected(candidateId: string, rejected: boolean): void {

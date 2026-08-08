@@ -120,3 +120,6 @@ export const animationPromptTypes = [
 ] as const;
 
 export type AnimationPromptType = (typeof animationPromptTypes)[number];
+
+export const exportFormats = ["GENERIC"] as const;
+export type ExportFormat = (typeof exportFormats)[number];

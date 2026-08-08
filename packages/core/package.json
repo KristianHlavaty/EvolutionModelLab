@@ -20,6 +20,7 @@
     "@eml/image-processing": "workspace:*",
     "@eml/prompt-builder": "workspace:*",
     "@eml/shared": "workspace:*",
+    "@eml/sprite-exporter": "workspace:*",
     "drizzle-orm": "^0.44.4",
     "zod": "^4.0.14"
   }

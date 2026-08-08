@@ -252,6 +252,83 @@ describe("Milestone 6 animation workflow", () => {
       actor: "TEST_USER",
     });
     expect(animation.status).toBe("APPROVED");
+    const report = service.getValidationReport(creature.id);
+    expect(report).toMatchObject({
+      readyForExport: true,
+      approvedAnimationCount: 1,
+      referencesApproved: 0,
+    });
+    expect(report.warningCount).toBeGreaterThan(0);
+    await expect(
+      service.exportCreature(creature.id, {
+        exportFormat: "GENERIC",
+        includePromptHistory: true,
+        confirmed: false,
+        actor: "TEST_USER",
+      }),
+    ).rejects.toMatchObject({
+      code: "CONFIRMATION_REQUIRED",
+    } satisfies Partial<AppError>);
+    const firstExport = await service.exportCreature(creature.id, {
+      exportFormat: "GENERIC",
+      includePromptHistory: true,
+      confirmed: true,
+      actor: "TEST_USER",
+    });
+    expect(firstExport).toMatchObject({
+      version: 1,
+      status: "COMPLETE",
+      summary: {
+        animationCount: 1,
+        frameCount: 2,
+        includePromptHistory: true,
+      },
+    });
+    const packageRoot = resolve(repositoryRoot, firstExport.packagePath);
+    const animationJsonPath = firstExport.summary.files.find((path) =>
+      path.endsWith("/animation.json"),
+    );
+    const firstFramePath = firstExport.summary.files.find((path) =>
+      path.endsWith("/frames/frame-0001.png"),
+    );
+    expect(
+      JSON.parse(
+        await readFile(resolve(packageRoot, animationJsonPath!), "utf8"),
+      ),
+    ).toMatchObject({
+      name: "Tail cycle",
+      fps: 10,
+      looping: true,
+      spriteSheet: { width: 64, height: 20, columns: 2, rows: 1 },
+      frames: [
+        { number: 1, durationMs: 125 },
+        { number: 2, durationMs: 100 },
+      ],
+    });
+    expect(await readFile(resolve(packageRoot, firstFramePath!))).toEqual(
+      repairBytes,
+    );
+    expect(
+      JSON.parse(
+        await readFile(resolve(packageRoot, "validation-report.json"), "utf8"),
+      ),
+    ).toMatchObject({
+      readyForExport: true,
+      warningCount: report.warningCount,
+    });
+    expect(
+      await readFile(resolve(packageRoot, "prompt-history.json"), "utf8"),
+    ).toContain("Animation Intermediate-Frame Request");
+    const secondExport = await service.exportCreature(creature.id, {
+      exportFormat: "GENERIC",
+      includePromptHistory: false,
+      confirmed: true,
+      actor: "TEST_USER",
+    });
+    expect(secondExport.version).toBe(2);
+    expect(secondExport.packagePath).not.toBe(firstExport.packagePath);
+    expect(secondExport.summary.files).not.toContain("prompt-history.json");
+    expect(service.getCreature(creature.id).status).toBe("GAME_READY");
     service.close();
   });
 });

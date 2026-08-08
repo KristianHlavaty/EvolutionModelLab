@@ -1,7 +1,7 @@
 import { resolve } from "node:path";
 
 import { expect, test as base } from "@playwright/test";
-import { createServer as createViteServer } from "vite";
+import { preview as createVitePreview } from "vite";
 
 import { createApp } from "../../apps/server/src/server.js";
 import { EvolutionModelLabService } from "../../packages/core/dist/index.js";
@@ -33,11 +33,11 @@ export const test = base.extend<Record<string, never>, WorkerFixtures>({
         apiServer.once("listening", resolveListen);
         apiServer.once("error", rejectListen);
       });
-      const vite = await createViteServer({
+      const web = await createVitePreview({
         configFile: resolve(repositoryRoot, "apps", "web", "vite.config.ts"),
         configLoader: "runner",
         root: resolve(repositoryRoot, "apps", "web"),
-        server: {
+        preview: {
           host,
           port: webPort,
           strictPort: true,
@@ -48,10 +48,9 @@ export const test = base.extend<Record<string, never>, WorkerFixtures>({
       });
 
       try {
-        await vite.listen();
         await use();
       } finally {
-        await vite.close();
+        await web.close();
         apiServer.closeAllConnections();
         await new Promise<void>((resolveClose, rejectClose) => {
           apiServer.close((error) => {
