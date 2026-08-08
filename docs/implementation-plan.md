@@ -12,14 +12,14 @@
 
 Evolution Model Lab is a local-first creature design workspace. ChatGPT supplies images through ordinary conversations; this application persists project state, builds prompts, imports and validates user-provided images, and maintains recoverable history. It does not call paid image-generation APIs and never pretends to generate images.
 
-The current release implements **Milestone 7**, building on locked designs, canonical references, and reviewed animation sequences. Persisted readiness reports and explicitly confirmed, immutable generic game packages are enabled; MCP and ChatGPT plugin surfaces remain disabled or clearly documented as later work.
+The current release implements **Milestone 8**, building on locked designs, canonical references, reviewed animation sequences, and immutable generic exports. A localhost Streamable HTTP MCP adapter exposes the same core workflows through 17 precisely described tools. ChatGPT Developer Mode connection work and plugin skills remain clearly deferred to Milestones 9–10.
 
 ## Module boundaries
 
 - `apps/web`: React/Vite interface, routing, uploads, numbered gallery, feedback/manifest/mutation editors, candidate and lineage comparison, persisted evolution tree, canonical-reference and Animation Lab workflows, readiness reports, immutable export history, lock/unlock confirmations, prompt history, and contact-sheet preview/confirmation.
 - `apps/server`: localhost Express transport, request parsing, error mapping, and exact guarded media responses.
-- `apps/mcp-server`: reserved application boundary for the later Streamable HTTP MCP server; no MCP SDK is installed through Milestone 7.
-- `packages/core`: reusable workflow/application services, including manifest versioning, design-lock rules, approved-parent evolution branching, lineage reads, ordered mutations, canonical-reference integrity/approval, animation review, validation reporting, and versioned export orchestration, used by REST and future MCP adapters.
+- `apps/mcp-server`: localhost Streamable HTTP MCP transport, current v2 SDK integration, tool schemas/metadata, safe result projection, and explicit confirmation parameters; all workflow behavior delegates to core.
+- `packages/core`: reusable workflow/application services, including manifest versioning, design-lock rules, approved-parent evolution branching, lineage reads, ordered mutations, canonical-reference integrity/approval, animation review, validation reporting, and versioned export orchestration, used by both REST and MCP adapters.
 - `packages/database`: SQLite connection, Drizzle schema, migrations, and database lifecycle.
 - `packages/shared`: Zod request/response contracts and shared domain constants.
 - `packages/image-processing`: PNG inspection, SHA-256 hashing, deterministic grid geometry, derived crop creation, and thumbnails.
@@ -27,7 +27,7 @@ The current release implements **Milestone 7**, building on locked designs, cano
 - `packages/sprite-exporter`: format-neutral exporter contract and generic transparent sprite-sheet adapter with guarded sheet limits and deterministic frame rectangles.
 - `packages/test-fixtures`: deterministic PNG fixture generation for tests.
 
-Transport handlers must not reimplement workflow rules. REST handlers call `packages/core`; the future MCP handlers will call the same services.
+Transport handlers must not reimplement workflow rules. REST and MCP handlers call the same `packages/core` services.
 
 ## Milestone 1 database schema
 
@@ -101,7 +101,7 @@ The table deliberately permits multiple historical attempts of one type while co
 3. **Untrusted image input:** MIME declarations and filenames are ignored for trust decisions. Sharp must decode the bytes as PNG, image dimensions and size are limited, and unsupported/corrupt files return structured errors.
 4. **Concurrent candidate imports:** candidate numbering and count checks happen inside a database transaction. SQLite write serialization plus unique indexes protects the invariant.
 5. **Development process coordination:** Vite and Express run together through one root command; ports and data roots are configurable without changing repository paths.
-6. **MCP file transfer:** direct ChatGPT-generated image handoff is intentionally unclaimed and deferred until it is tested against current official SDK/client support.
+6. **MCP file transfer:** current official SDK/tool documentation does not establish an interoperable direct ChatGPT-generated file input for this workflow. Milestone 8 therefore registers no fictional import tools; picker/drop/clipboard remains the supported boundary and Milestone 9 records the client capability spike.
 
 ## Milestone 1 acceptance criteria
 
@@ -129,7 +129,7 @@ The table deliberately permits multiple historical attempts of one type while co
 | 5         | Canonical references and approval gates              | Completed |
 | 6         | Animation Lab and repair workflow                    | Completed |
 | 7         | Validation and game-ready export                     | Completed |
-| 8         | Streamable HTTP MCP server and tools                 | Pending   |
+| 8         | Streamable HTTP MCP server and tools                 | Completed |
 | 9         | ChatGPT Developer Mode integration and handoff spike | Pending   |
 | 10        | Skills, evaluations, and optional ChatGPT UI         | Pending   |
 
@@ -342,9 +342,39 @@ The core suite additionally verifies confirmation and readiness failures, monoto
 
 Manual in-app browser QA inspected the persisted export report and completed package at desktop and 700-pixel widths. The narrow layout had no horizontal overflow. QA also found and fixed production-preview API proxy parity, after which the page loaded persisted data without errors; the responsive override was reset and isolated QA services were stopped.
 
+## Milestone 8 acceptance criteria
+
+- [x] The MCP application uses the stable v2 official TypeScript SDK packages and serves Streamable HTTP at localhost `/mcp` by default.
+- [x] MCP and REST call the same `EvolutionModelLabService`; no workflow, persistence, path, approval, or export rule is duplicated in transport handlers.
+- [x] Server instructions require read-first context, one selected refinement parent, mandatory reference completion before animation, explicit confirmation for consequential actions, locked-asset preservation, and honest error handling.
+- [x] Six read tools expose creatures, authoritative context, persisted prompts, current rounds, candidate galleries, and validation reports with stable IDs and local routes.
+- [x] Eleven write tools cover creature/round/selection/feedback/lock/unlock/descendant/animation/approval/export workflows with core-owned gates.
+- [x] Every tool has a title, useful description, precise Zod input schema, discriminated structured output schema, JSON text fallback, accurate annotations, and stable structured errors.
+- [x] MCP results do not expose absolute filesystem roots. Export package paths remain guarded repository-relative values, and image/context navigation uses local application or media routes.
+- [x] No unsupported file-import tool or invented path/base64/URL field is advertised; the tool response directs users to the validated local picker, drag-and-drop, and clipboard workflow.
+- [x] The SDK client integration suite negotiates the current protocol, verifies instructions/discovery/annotations, executes success and workflow-error paths, and reaches the real hardened localhost Express adapter.
+- [x] Existing unit/integration and complete production-backed Playwright workflows remain green.
+
+## Milestone 8 test status
+
+Final verification on 2026-08-08:
+
+| Command                      | Result                                                                                               |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `corepack pnpm format:check` | Passed; every matched file uses Prettier style                                                       |
+| `corepack pnpm lint`         | Passed; 0 ESLint errors                                                                              |
+| `corepack pnpm typecheck`    | Passed; packages, REST server, web, and MCP server compile in strict mode                            |
+| `corepack pnpm test`         | Passed; 10 files and 39 Vitest unit/integration tests                                                |
+| `corepack pnpm test:e2e`     | Passed; 6 production-backed Playwright workflows through persistent generic export                   |
+| `corepack pnpm build`        | Passed; all packages/servers compiled and Vite transformed 1,680 modules                             |
+| MCP protocol exercise        | Passed; official v2 client used in-process and real localhost Streamable HTTP, with 17 tools exposed |
+
+The MCP suite verifies the exact tool inventory, server instructions, concrete output schemas, read/state-replacement annotations, the deliberate absence of import tools, structured success/error envelopes, safe route projection, create/read/prompt workflows, modern protocol negotiation, and both direct-handler and Express transport paths. The same full Playwright suite used for Milestone 7 remains green, demonstrating that the new adapter does not regress earlier local workflows.
+
 ## Known limitations
 
-- MCP, ChatGPT integration, and plugin skills remain deferred to their planned milestones.
+- ChatGPT Developer Mode connection testing and plugin skills remain deferred to Milestones 9–10. Milestone 8 proves the MCP server locally through the official client and Inspector-compatible endpoint.
+- The localhost MCP endpoint has no authentication and must not be exposed as a permanent public service. Milestone 9 owns temporary secure development exposure and live ChatGPT connection verification.
 - Milestone 7 ships one `GENERIC` sprite-package adapter. Engine-specific pivots, import metadata, atlases, and runtime integration remain future adapter work.
 - Export validation combines persisted workflow gates and image heuristics; it does not claim semantic anatomy or identity recognition.
 - Animation continuity checks are practical image heuristics, not semantic anatomy or identity recognition. Warnings require human review and do not auto-reject a frame.

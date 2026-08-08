@@ -10,10 +10,10 @@ Evolution Model Lab is a pnpm TypeScript monorepo with strict module ownership:
 - `packages/database` owns the Drizzle schema, committed SQLite migrations, connection pragmas, and database lifecycle.
 - `packages/prompt-builder` owns deterministic prompt text.
 - `packages/image-processing` owns content-based PNG validation, SHA-256 hashing, image metadata, deterministic crop geometry, derived crops, and thumbnails.
-- `apps/mcp-server` is reserved for the Milestone 8 adapter and will call `packages/core`; it must not reimplement rules.
-- `packages/sprite-exporter` is reserved for Milestone 7.
+- `packages/sprite-exporter` owns the format-neutral adapter contract and generic sprite-sheet export implementation.
+- `apps/mcp-server` owns only Streamable HTTP transport, MCP schemas/metadata, safe result projection, and confirmation-aware tool registration. It calls `packages/core` and does not reimplement workflow rules.
 
-## Data flow through Milestone 5
+## Data flow through Milestone 8
 
 ### REST flow
 
@@ -33,7 +33,7 @@ Separate candidate PNG originals are written exclusively to `candidates/`; separ
 
 ### Prompt-building flow
 
-Core retrieves stored creature fields and passes a typed value object to `packages/prompt-builder`. The builder emits deterministic text. Core persists the exact prompt in both SQLite and `prompt.txt`, so the UI and later MCP reads refer to the same revision.
+Core retrieves stored creature fields and passes a typed value object to `packages/prompt-builder`. The builder emits deterministic text. Core persists the exact prompt in both SQLite and `prompt.txt`, so the UI and MCP reads refer to the same revision.
 
 For refinement, core requires one selected candidate in the current round, reads its structured feedback, freezes a complete snapshot, and passes identity, parent, feedback, and production constraints to the prompt builder. The new round points back to the parent candidate; earlier prompt/context files and candidate rows remain unchanged.
 
@@ -51,7 +51,7 @@ The web editor sends a complete typed manifest draft to REST. Core validates lis
 
 Lock requests contain confirmation acknowledgements, not trusted candidate metadata. Core reloads the selected current-round candidate, verifies creature ownership and protected state, resolves its path against the configured workspace, revalidates PNG bytes and SHA-256, stages the active copy and manifest snapshot exclusively, and then commits the lock plus history transaction. On failure, only files created by that attempt are removed. Unlocking preserves all filesystem artifacts and history while clearing the active relationship. A relock first archives the previous active copy and marks its lock record superseded, then installs the new verified copy.
 
-REST exposes only transport-shaped manifest, lock, unlock, history, media, and protected delete/reject endpoints. All workflow decisions remain in `packages/core`, so a later MCP adapter can reuse exactly the same gates.
+REST exposes only transport-shaped manifest, lock, unlock, history, media, and protected delete/reject endpoints. All workflow decisions remain in `packages/core`, and the MCP adapter reuses exactly the same gates.
 
 ### Evolution flow
 
@@ -69,12 +69,14 @@ Each attempt accepts at most one real PNG. Core validates and hashes the bytes i
 
 Project settings store an ordered unique mandatory-reference list that must include `LOCKED_DESIGN`. The default is locked design, strict side profile, silhouette, and colour/material. Core calculates satisfaction from the active lock plus approved rows tied to that same lock. `REFERENCE_APPROVED` means that mandatory set is complete; optional reference attempts do not block the workflow. Settings changes and relocks re-evaluate the gate while preserving prior attempts as stale history.
 
-## Future flows
-
 ### MCP flow
 
-The future Streamable HTTP `/mcp` adapter will validate tool schemas at the transport boundary and call the same core methods as REST. Read/write/destructive annotations and confirmation gates will live in the adapter; workflow authorization remains in core.
+The localhost Streamable HTTP `/mcp` adapter uses the stable v2 official TypeScript SDK. Each registered tool has a concrete Zod input and discriminated output schema, title, description, accurate closed-world annotations, and a thin handler that calls `EvolutionModelLabService`. Results project stable IDs, guarded relative package paths, and local application/media routes; absolute filesystem roots are never returned.
+
+The server instructions require read-first context, one selected refinement parent, complete mandatory references before animation, explicit confirmation for consequential operations, and honest error handling. Transport confirmation fields make intent explicit, while core remains authoritative for ownership, state, file integrity, and persistence gates.
+
+The MCP Express adapter binds to `127.0.0.1` by default and uses the SDK's host/origin protection. A modern v2 client may negotiate the 2026-07-28 protocol; the server also enables stateless legacy handling for compatible clients. No direct image-import tool is advertised because current documented tool input does not provide an interoperable ChatGPT-generated file handoff. Returned `appRoute` values lead users to the existing validated picker/drop/clipboard workflow.
 
 ### Export flow
 
-The future generic exporter will read approved state from core, read guarded source paths, generate versioned packages under `exports/`, and append history only after successful completion. It will never silently replace an export.
+The generic exporter reads approved state from core, rereads guarded source paths, creates a new exclusive staging/version directory under `exports/`, copies authoritative originals byte-for-byte, writes derived sheets and metadata separately, and appends history only after successful completion. It never silently replaces an export.

@@ -2,7 +2,7 @@
 
 Evolution Model Lab is a local-first workspace for AI-assisted creature design. It stores creature briefs, deterministic ChatGPT prompts, imported concept candidates, durable selection state, and recoverable history without calling an image-generation API.
 
-Milestone 7 is the current release. It adds persisted export-readiness reports and explicitly confirmed, immutable generic game packages containing the locked design, approved references, original animation frames, derived sprite sheets, and JSON metadata. ChatGPT remains a manual handoff: the application builds and saves prompts but does not call an image-generation API.
+Milestone 8 is the current release. It adds a localhost Streamable HTTP MCP server backed by the same core workflows as REST, with 17 read/write tools, precise schemas, structured errors, accurate annotations, and explicit confirmation gates. ChatGPT image generation remains a manual handoff: the application builds and saves prompts but does not call an image-generation API.
 
 > Screenshot placeholder: screenshots will be captured after the visual-review workflow stabilizes.
 
@@ -48,7 +48,7 @@ corepack pnpm install
 corepack pnpm dev
 ```
 
-Open [http://127.0.0.1:5173](http://127.0.0.1:5173). The single `pnpm dev` command starts the Vite interface and localhost REST server together. Both services bind to `127.0.0.1` by default.
+Open [http://127.0.0.1:5173](http://127.0.0.1:5173). The single `pnpm dev` command starts the Vite interface, REST server, and MCP server together. All services bind to `127.0.0.1` by default; MCP is available at `http://127.0.0.1:3002/mcp`.
 
 ## Concept, design-lock, evolution, and reference workflow
 
@@ -85,13 +85,17 @@ Open [http://127.0.0.1:5173](http://127.0.0.1:5173). The single `pnpm dev` comma
 31. Explicitly approve only when the exact expected frame count is active, the current reference gate still holds, and no frame remains marked for repair.
 32. Open **Export**, review every blocking issue and warning, then choose **Review new export**. The confirmation identifies the next immutable version and whether prompt history will be included.
 33. A successful generic export copies authoritative originals unchanged, creates derived sprite sheets and metadata, and records the package under a new `export-vNNN` directory. Prior versions remain available in export history and are never overwritten.
+34. MCP clients may read workflow context and invoke the same core operations through `/mcp`. Read context first and follow the returned local app routes for image import and visual review.
+35. Lock, unlock, reference approval, animation approval, and export tools require `confirmation=true` only after the user explicitly approves that exact action.
 
 ## Commands
 
 ```powershell
-pnpm dev              # web + REST server
+pnpm dev              # web + REST + MCP servers
 pnpm dev:web          # Vite only
 pnpm dev:server       # Express only
+pnpm dev:mcp          # Streamable HTTP MCP only
+pnpm inspect:mcp      # open the official MCP Inspector for /mcp
 pnpm format           # apply Prettier
 pnpm format:check     # verify formatting
 pnpm lint             # ESLint
@@ -107,9 +111,9 @@ Use `corepack pnpm` instead of `pnpm` if Corepack shims are not enabled.
 
 ## MCP and ChatGPT connection
 
-The MCP adapter is intentionally scheduled for Milestone 8. `pnpm dev:mcp` and `pnpm inspect:mcp` currently exit with a clear message instead of pretending a server exists. Manual picker, drag-and-drop, and clipboard imports are already available and will remain permanent fallbacks.
+The MCP adapter uses the stable v2 official TypeScript SDK and serves Streamable HTTP at `http://127.0.0.1:3002/mcp`. It calls the same `packages/core` application service as REST; transport handlers do not duplicate workflow rules. Start it with `pnpm dev:mcp` or as part of `pnpm dev`, then inspect it with `pnpm inspect:mcp`.
 
-When MCP is implemented, it will use the same `packages/core` application service as REST, the then-current official TypeScript MCP SDK, and the recommended Streamable HTTP transport. See [docs/chatgpt-setup.md](docs/chatgpt-setup.md) and [docs/mcp-tools.md](docs/mcp-tools.md).
+The server deliberately does not register image-import tools. Current official MCP documentation does not establish an interoperable direct ChatGPT-generated file parameter for ordinary tool calls, so picker, drag-and-drop, and clipboard import remain the honest handoff. See [docs/chatgpt-setup.md](docs/chatgpt-setup.md) and [docs/mcp-tools.md](docs/mcp-tools.md).
 
 ## Troubleshooting
 
@@ -122,4 +126,4 @@ When MCP is implemented, it will use the same `packages/core` application servic
 
 ## Current limitations
 
-MCP, ChatGPT integration, and plugin skills remain intentionally pending later milestones. The current exporter provides a generic sprite package rather than engine-specific import metadata. Reference and export validation prove file integrity and record mechanical warnings; semantic identity matching still requires explicit human approval. Animation continuity checks are image heuristics rather than anatomy recognition, and the app imports finished PNG frames rather than generating or interpolating motion. Evolution currently models one approved parent per descendant; mutations are frozen when the descendant is created, and ancestor/descendant comparison is side-by-side. Local history actors are recorded as `LOCAL_USER` or `SYSTEM`; authentication and named-user identity are not implemented. Contact-sheet import supports PNG grids with explicit rows, columns, outer margins, and horizontal/vertical gaps; it does not guess irregular cell boundaries. See [docs/implementation-plan.md](docs/implementation-plan.md) for exact status and limitations.
+ChatGPT Developer Mode connection instructions, the live connection evaluation, and plugin skills remain pending Milestones 9–10. The MCP endpoint is localhost-only and unauthenticated; do not expose it as a permanent public service. Direct ChatGPT-generated image-file transfer is not claimed. The current exporter provides a generic sprite package rather than engine-specific import metadata. Reference and export validation prove file integrity and record mechanical warnings; semantic identity matching still requires explicit human approval. Animation continuity checks are image heuristics rather than anatomy recognition, and the app imports finished PNG frames rather than generating or interpolating motion. Evolution currently models one approved parent per descendant; mutations are frozen when the descendant is created, and ancestor/descendant comparison is side-by-side. Local history actors are recorded as `LOCAL_USER`, `MCP_CLIENT`, or `SYSTEM`; authentication and named-user identity are not implemented. Contact-sheet import supports PNG grids with explicit rows, columns, outer margins, and horizontal/vertical gaps; it does not guess irregular cell boundaries. See [docs/implementation-plan.md](docs/implementation-plan.md) for exact status and limitations.

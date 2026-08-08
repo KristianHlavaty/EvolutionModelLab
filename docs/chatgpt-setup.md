@@ -1,31 +1,29 @@
 # ChatGPT setup
 
-Milestone 1 uses ordinary ChatGPT conversations plus manual local import. There is no development MCP connection to add yet.
+Milestone 8 provides and locally verifies the Streamable HTTP MCP server. Milestone 9 owns current ChatGPT Developer Mode connection instructions, secure temporary remote exposure, live ChatGPT evaluation, and the image-handoff capability spike. Until that work is completed, the supported production workflow remains ordinary ChatGPT conversations plus manual local PNG import.
 
-## Working setup now
+## Local MCP verification now
 
-1. Start Evolution Model Lab with `pnpm dev`.
-2. Create a creature and Concept Round 1.
-3. Copy the prompt from Model Lab.
-4. Open an ordinary ChatGPT conversation using the user's existing subscription.
-5. Paste the prompt and obtain the image results.
-6. Save, drag, choose, or paste the actual PNG results into Model Lab.
+1. Open PowerShell at `C:\Users\krist\Desktop\coding\EvolutionModelLab`.
+2. Run `pnpm dev` for the web, REST, and MCP services together, or `pnpm dev:mcp` for MCP alone.
+3. Confirm `http://127.0.0.1:3002/health` returns an `ok` response.
+4. Run `pnpm inspect:mcp` and connect the official MCP Inspector to `http://127.0.0.1:3002/mcp`.
+5. Review the 17 discovered tools, schemas, annotations, and server instructions.
+6. Call `list_creatures`, then `get_creature_context` for a chosen stable creature ID.
+7. Exercise writes only against disposable local data. Consequential tools still require explicit `confirmation=true`.
 
-No OpenAI API key or paid API image generation is used.
+The automated integration suite also negotiates the current protocol through the official v2 TypeScript client and calls both an in-process Streamable HTTP handler and the real localhost Express endpoint.
 
-## Planned Developer Mode setup
+## Supported image workflow
 
-After Milestone 8 implements and tests Streamable HTTP MCP:
+1. Copy a persisted generation/reference/animation prompt from the local app or `get_generation_prompt`.
+2. Use the prompt and required approved image attachments in an ordinary ChatGPT conversation.
+3. Return to the tool's `appRoute` in Evolution Model Lab.
+4. Import actual PNG results using the picker, drag-and-drop, or clipboard.
+5. Review, select, repair, or approve them through the persisted local workflow.
 
-1. Start the web, REST, and MCP services using their documented scripts.
-2. Inspect `/mcp` using the then-current official MCP inspection tool.
-3. For remote client testing only, expose the narrow MCP endpoint through a supported secure tunnel or a user-configured temporary HTTPS development tunnel.
-4. Use the current ChatGPT Developer Mode interface to add the development MCP connection.
-5. Review the discovered tools and annotations before enabling writes.
-6. Start a new chat with the development connection enabled and run read-first evaluation prompts.
-7. Refresh or recreate the connection after tool schemas or metadata change.
-8. Stop the tunnel when testing finishes.
+The MCP server does not claim direct generated-file transfer and registers no fictional import parameters. No OpenAI API key or paid image-generation API is used.
 
-ChatGPT interface labels change over time. At implementation time, this document must be refreshed from current official documentation and the current Developer Mode interface rather than relying on obsolete menu names.
+## Milestone 9 boundary
 
-Never expose an unauthenticated MCP endpoint as a permanent public service and never commit tunnel credentials or tokens.
+Do not expose `127.0.0.1:3002/mcp` as a permanent public unauthenticated endpoint. Milestone 9 will refresh this guide from current official OpenAI documentation, select a supported temporary HTTPS tunnel for development testing, document the current Developer Mode controls, evaluate read/write/confirmation behavior in ChatGPT, and stop/remove temporary exposure afterward.

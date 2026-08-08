@@ -3,5 +3,25 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Reserved for the Milestone 8 Streamable HTTP MCP adapter."
+  "description": "Streamable HTTP MCP adapter for Evolution Model Lab.",
+  "main": "./dist/index.js",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "inspect": "npx --yes @modelcontextprotocol/inspector http://127.0.0.1:3002/mcp"
+  },
+  "dependencies": {
+    "@eml/core": "workspace:*",
+    "@eml/shared": "workspace:*",
+    "@modelcontextprotocol/express": "^2.0.0",
+    "@modelcontextprotocol/node": "^2.0.0",
+    "@modelcontextprotocol/server": "^2.0.0",
+    "express": "^5.1.0",
+    "zod": "^4.0.14"
+  },
+  "devDependencies": {
+    "@modelcontextprotocol/client": "^2.0.0",
+    "@types/express": "^5.0.3"
+  }
 }
