@@ -12,7 +12,7 @@
 
 Evolution Model Lab is a local-first creature design workspace. ChatGPT supplies images through ordinary conversations; this application persists project state, builds prompts, imports and validates user-provided images, and maintains recoverable history. It does not call paid image-generation APIs and never pretends to generate images.
 
-The current release implements **Milestone 8**, building on locked designs, canonical references, reviewed animation sequences, and immutable generic exports. A localhost Streamable HTTP MCP adapter exposes the same core workflows through 17 precisely described tools. ChatGPT Developer Mode connection work and plugin skills remain clearly deferred to Milestones 9–10.
+The current release implements all repository-owned work through **Milestone 9**, building on locked designs, canonical references, reviewed animation sequences, immutable generic exports, and a 17-tool localhost Streamable HTTP MCP adapter. Current Developer Mode and Secure MCP Tunnel instructions, a versioned evaluation set, an honest file-handoff capability decision, and browser-verified manual fallbacks are included. A live ChatGPT connection still requires the user's eligible authenticated workspace and tunnel credentials; that external acceptance run is recorded but not claimed as complete. Plugin skills remain Milestone 10 work.
 
 ## Module boundaries
 
@@ -120,18 +120,18 @@ The table deliberately permits multiple historical attempts of one type while co
 
 ## Milestones
 
-| Milestone | Scope                                                | Status    |
-| --------- | ---------------------------------------------------- | --------- |
-| 1         | Repository and persisted concept vertical slice      | Completed |
-| 2         | Feedback, refinement, prompt history, contact sheets | Completed |
-| 3         | Design lock, manifest, history expansion             | Completed |
-| 4         | Evolution lineage and mutations                      | Completed |
-| 5         | Canonical references and approval gates              | Completed |
-| 6         | Animation Lab and repair workflow                    | Completed |
-| 7         | Validation and game-ready export                     | Completed |
-| 8         | Streamable HTTP MCP server and tools                 | Completed |
-| 9         | ChatGPT Developer Mode integration and handoff spike | Pending   |
-| 10        | Skills, evaluations, and optional ChatGPT UI         | Pending   |
+| Milestone | Scope                                                | Status                                   |
+| --------- | ---------------------------------------------------- | ---------------------------------------- |
+| 1         | Repository and persisted concept vertical slice      | Completed                                |
+| 2         | Feedback, refinement, prompt history, contact sheets | Completed                                |
+| 3         | Design lock, manifest, history expansion             | Completed                                |
+| 4         | Evolution lineage and mutations                      | Completed                                |
+| 5         | Canonical references and approval gates              | Completed                                |
+| 6         | Animation Lab and repair workflow                    | Completed                                |
+| 7         | Validation and game-ready export                     | Completed                                |
+| 8         | Streamable HTTP MCP server and tools                 | Completed                                |
+| 9         | ChatGPT Developer Mode integration and handoff spike | Local work complete; account run pending |
+| 10        | Skills, evaluations, and optional ChatGPT UI         | Pending                                  |
 
 ## Milestone 1 test status
 
@@ -371,10 +371,41 @@ Final verification on 2026-08-08:
 
 The MCP suite verifies the exact tool inventory, server instructions, concrete output schemas, read/state-replacement annotations, the deliberate absence of import tools, structured success/error envelopes, safe route projection, create/read/prompt workflows, modern protocol negotiation, and both direct-handler and Express transport paths. The same full Playwright suite used for Milestone 7 remains green, demonstrating that the new adapter does not regress earlier local workflows.
 
+## Milestone 9 acceptance criteria
+
+- [x] Current official OpenAI documentation is reflected in the Developer Mode, plugin/app naming, Streamable HTTP, connection-refresh, and plan/workspace caveats.
+- [x] `docs/chatgpt-setup.md` documents local startup, health, current Inspector use, Secure MCP Tunnel initialization/diagnostics, ChatGPT connection, evaluation, cleanup, and troubleshooting.
+- [x] Secure MCP Tunnel is the preferred private connection; a generic public HTTPS tunnel is documented only as a deliberate authenticated alternative with public-ingress risk.
+- [x] No key, token, tunnel ID, account credential, or absolute private file location is committed in plugin metadata or eval prompts.
+- [x] `plugin/evals/mcp-tool-evals.json` covers direct/indirect reads, stable-ID reuse, writes, workflow gates, explicit confirmation, errors, and unsupported image import.
+- [x] The eval fixture is machine-validated against the 17 registered expected tool names and includes unique cases with assertions.
+- [x] The file-handoff spike records the tested client/date, official-source review, metadata not observed, unsupported cases, and the procedure for a later authenticated live test.
+- [x] No fictional import tool, local-path input, arbitrary URL fetch, or invented base64 parameter is exposed.
+- [x] File picker and contact-sheet imports remain covered, while new Playwright coverage dispatches real PNG bytes through browser drag/drop and clipboard paste and verifies persistence after reload.
+- [x] The signed-out current ChatGPT Plugins page was inspected without modifying an account or creating a connection.
+- [ ] An authenticated eligible ChatGPT workspace completes every live eval through an associated Secure MCP Tunnel. This external acceptance step needs the user's workspace access, `tunnel_id`, and runtime key; no success is claimed without them.
+
+## Milestone 9 test status
+
+Repository verification on 2026-08-08:
+
+| Command                      | Result                                                                                               |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `corepack pnpm format:check` | Passed; every matched source, documentation, and eval file uses Prettier style                       |
+| `corepack pnpm lint`         | Passed; 0 ESLint errors                                                                              |
+| `corepack pnpm typecheck`    | Passed; packages, REST server, web, and MCP server compile in strict mode                            |
+| `corepack pnpm test`         | Passed; 11 files and 40 Vitest unit/integration/eval-fixture tests                                   |
+| `corepack pnpm test:e2e`     | Passed; 7 production-backed Playwright workflows, including drop/clipboard fallback persistence      |
+| `corepack pnpm build`        | Passed; all packages/servers compiled and Vite transformed 1,680 modules                             |
+| Live ChatGPT eval set        | Not run; no authenticated eligible workspace, associated tunnel ID, or runtime key in this workspace |
+
+The first E2E run exposed a test timing issue: the synthetic drop occurred before the round route rendered. The test now waits for the concept workspace heading before dispatching the event; the complete suite then passed. This was test synchronization, not an application import failure.
+
 ## Known limitations
 
-- ChatGPT Developer Mode connection testing and plugin skills remain deferred to Milestones 9–10. Milestone 8 proves the MCP server locally through the official client and Inspector-compatible endpoint.
-- The localhost MCP endpoint has no authentication and must not be exposed as a permanent public service. Milestone 9 owns temporary secure development exposure and live ChatGPT connection verification.
+- Live ChatGPT Developer Mode/tunnel evaluation remains an external acceptance step requiring the user's authenticated eligible workspace, associated tunnel ID, and runtime key. Local protocol and fallback evidence passes, but a live connection is not claimed.
+- The localhost MCP endpoint has no authentication and must not be exposed as a permanent public service. Private development should use Secure MCP Tunnel; public HTTPS exposure needs a deliberate authenticated boundary.
+- Repository and creature-generation skills remain Milestone 10 work.
 - Milestone 7 ships one `GENERIC` sprite-package adapter. Engine-specific pivots, import metadata, atlases, and runtime integration remain future adapter work.
 - Export validation combines persisted workflow gates and image heuristics; it does not claim semantic anatomy or identity recognition.
 - Animation continuity checks are practical image heuristics, not semantic anatomy or identity recognition. Warnings require human review and do not auto-reject a frame.

@@ -9,7 +9,7 @@
     "dev": "tsx watch src/index.ts",
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "inspect": "npx --yes @modelcontextprotocol/inspector http://127.0.0.1:3002/mcp"
+    "inspect": "npx --yes @modelcontextprotocol/inspector@latest http://127.0.0.1:3002/mcp"
   },
   "dependencies": {
     "@eml/core": "workspace:*",

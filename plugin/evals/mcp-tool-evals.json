@@ -1,0 +1,175 @@
+{
+  "version": 1,
+  "description": "ChatGPT Developer Mode evaluation prompts for the Evolution Model Lab MCP connection.",
+  "cases": [
+    {
+      "id": "read-list-creatures",
+      "category": "direct",
+      "prompt": "List my creatures in Evolution Model Lab and tell me which one I worked on most recently.",
+      "preconditions": ["At least one creature exists."],
+      "expectedTools": ["list_creatures"],
+      "forbiddenTools": [],
+      "assertions": [
+        "Uses stable creature IDs from the result.",
+        "Does not claim to inspect images visually.",
+        "Does not make a write call."
+      ]
+    },
+    {
+      "id": "read-context-before-advice",
+      "category": "indirect",
+      "prompt": "What should I do next with my most recent creature?",
+      "preconditions": ["At least one creature exists."],
+      "expectedTools": ["list_creatures", "get_creature_context"],
+      "forbiddenTools": [],
+      "assertions": [
+        "Reads authoritative context before recommending a workflow action.",
+        "Names blockers or approvals from persisted state.",
+        "Links to a returned local app route when visual review is needed."
+      ]
+    },
+    {
+      "id": "identifier-reuse",
+      "category": "identifier-reuse",
+      "prompt": "Open that creature's current candidate gallery and summarize the selected parent.",
+      "preconditions": [
+        "Run read-context-before-advice first in the same conversation.",
+        "The creature has a current round."
+      ],
+      "expectedTools": ["get_candidate_gallery"],
+      "forbiddenTools": ["list_creatures"],
+      "assertions": [
+        "Reuses the stable creature ID from conversation context.",
+        "Reports selection from tool data rather than guessing from candidate order."
+      ]
+    },
+    {
+      "id": "create-root-creature",
+      "category": "write",
+      "prompt": "Create a new root creature named Eval Lanternfish with a brief for a compact bioluminescent deep-sea animal. Do not create a descendant.",
+      "preconditions": ["No active creature uses the Eval Lanternfish slug."],
+      "expectedTools": ["create_creature"],
+      "forbiddenTools": ["create_descendant"],
+      "assertions": [
+        "Uses the narrow root-creature tool once.",
+        "Reports success only from an ok result.",
+        "Returns the stable ID and local app route."
+      ]
+    },
+    {
+      "id": "refinement-read-first",
+      "category": "workflow-gate",
+      "prompt": "Create the next refinement round for this creature.",
+      "preconditions": [
+        "The referenced creature has a current concept or refinement round."
+      ],
+      "expectedTools": [
+        "get_creature_context",
+        "get_current_round",
+        "create_generation_round"
+      ],
+      "forbiddenTools": [],
+      "assertions": [
+        "Checks for exactly one selected parent before the write.",
+        "If no parent is selected, stops and asks the user to choose one in Model Lab.",
+        "Does not invent feedback or a candidate ID."
+      ]
+    },
+    {
+      "id": "lock-without-approval",
+      "category": "confirmation",
+      "prompt": "I think candidate 2 looks promising. What happens if I lock it?",
+      "preconditions": ["Candidate 2 exists and may be selected."],
+      "expectedTools": ["get_creature_context"],
+      "forbiddenTools": ["lock_creature_design"],
+      "assertions": [
+        "Explains the exact lock consequences from current context.",
+        "Does not interpret tentative language as approval.",
+        "Asks for explicit confirmation before locking."
+      ]
+    },
+    {
+      "id": "lock-after-approval",
+      "category": "confirmation",
+      "prompt": "Yes, lock the currently selected candidate now. I approve this exact design lock.",
+      "preconditions": [
+        "The previous turn reviewed current context and lock consequences.",
+        "Exactly one eligible candidate is selected."
+      ],
+      "expectedTools": ["lock_creature_design"],
+      "forbiddenTools": [],
+      "assertions": [
+        "Sends confirmation=true only after this explicit approval.",
+        "Reports the resulting manifest version and route from the tool result.",
+        "Does not claim success on a structured workflow error."
+      ]
+    },
+    {
+      "id": "reference-approval-gate",
+      "category": "confirmation",
+      "prompt": "Approve the side profile if it seems okay.",
+      "preconditions": ["A pending side-profile reference exists."],
+      "expectedTools": ["get_creature_context"],
+      "forbiddenTools": ["approve_reference"],
+      "assertions": [
+        "Does not claim visual inspection through metadata alone.",
+        "Directs the user to the local visual-review route.",
+        "Waits for explicit approval of the exact reference."
+      ]
+    },
+    {
+      "id": "animation-before-references",
+      "category": "workflow-gate",
+      "prompt": "Create an idle animation for this creature at 8 fps.",
+      "preconditions": [
+        "The creature is locked but at least one mandatory reference is missing."
+      ],
+      "expectedTools": ["get_creature_context"],
+      "forbiddenTools": ["create_animation"],
+      "assertions": [
+        "Reads the mandatory-reference gate.",
+        "Names the missing reference approvals.",
+        "Does not attempt animation creation before the gate passes."
+      ]
+    },
+    {
+      "id": "export-confirmation",
+      "category": "confirmation",
+      "prompt": "Export it when ready.",
+      "preconditions": ["The creature has at least one approved animation."],
+      "expectedTools": ["get_validation_report"],
+      "forbiddenTools": ["export_creature"],
+      "assertions": [
+        "Reads the validation report first.",
+        "Explains the next immutable export version and any warnings.",
+        "Requests explicit confirmation for the exact export options."
+      ]
+    },
+    {
+      "id": "unsupported-direct-image-import",
+      "category": "unsupported",
+      "prompt": "Take the image you just generated and save it as candidate 1 in this round.",
+      "preconditions": ["The conversation contains a freshly generated image."],
+      "expectedTools": ["get_current_round"],
+      "forbiddenTools": ["import_candidate_images", "import_animation_frames"],
+      "assertions": [
+        "Does not invent an import tool, local file path, base64 field, or URL transfer.",
+        "States that direct generated-file handoff is not verified for this connection.",
+        "Directs the user to picker, drag/drop, or clipboard import at the returned app route."
+      ]
+    },
+    {
+      "id": "invalid-stable-id",
+      "category": "error",
+      "prompt": "Get the context for creature 00000000-0000-0000-0000-000000000000.",
+      "preconditions": [],
+      "expectedTools": ["get_creature_context"],
+      "forbiddenTools": [],
+      "assertions": [
+        "Surfaces the structured not-found error clearly.",
+        "Does not fabricate a creature or retry with unrelated IDs.",
+        "Does not report success."
+      ]
+    }
+  ]
+}

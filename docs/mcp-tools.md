@@ -2,7 +2,7 @@
 
 Milestone 8 serves the stable v2 TypeScript MCP SDK over Streamable HTTP at `http://127.0.0.1:3002/mcp`. The adapter is intentionally thin: every operation calls `packages/core`, so REST and MCP enforce the same persisted workflow gates.
 
-Start all local services with `pnpm dev`, or start only MCP with `pnpm dev:mcp`. With the server running, `pnpm inspect:mcp` launches the official MCP Inspector for the endpoint. The health check is `GET http://127.0.0.1:3002/health`.
+Start all local services with `pnpm dev`, or start only MCP with `pnpm dev:mcp`. With the server running, `pnpm inspect:mcp` launches the latest official MCP Inspector for the endpoint. The health check is `GET http://127.0.0.1:3002/health`. ChatGPT connection and Secure MCP Tunnel instructions are in `docs/chatgpt-setup.md`; evaluation cases are in `plugin/evals/mcp-tool-evals.json`.
 
 ## Server instructions
 
