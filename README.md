@@ -1,139 +1,116 @@
 # Evolution Model Lab
 
-Evolution Model Lab is a local-first workspace for AI-assisted creature design. It stores creature briefs, deterministic ChatGPT prompts, imported concept candidates, durable selection state, and recoverable history without calling an image-generation API.
+Evolution Model Lab is a local-first workspace for AI-assisted creature design. It manages deterministic generation prompts, imported concept candidates, controlled refinement, evolutionary lineage, canonical references, animation review and repair, validation, and versioned game-ready exports.
 
-Repository-owned development is complete through Milestone 10. The release includes a localhost Streamable HTTP MCP server backed by the same core workflows as REST, with 17 read/write tools, precise schemas, structured errors, accurate annotations, and explicit confirmation gates. It also includes current ChatGPT Developer Mode/Secure MCP Tunnel instructions, versioned tool and skill evaluations, browser-verified manual image handoffs, a repository Codex skill, and a creature-generation plugin skill. ChatGPT image generation remains a manual handoff: the application builds and saves prompts but does not call an image-generation API.
+Image generation happens in ordinary ChatGPT conversations. The application does not call a paid image-generation API and never pretends that an image was generated, imported, approved, or exported when the corresponding operation did not succeed.
 
-> Screenshot placeholder: screenshots will be captured after the visual-review workflow stabilizes.
+## What it supports
 
-## Repository and local data
+- Persistent creature projects, immutable generation rounds, and structured candidate feedback.
+- Numbered PNG candidate galleries, comparison, contact-sheet splitting, and one selected parent per round.
+- Versioned Design Manifests with explicit lock, unlock, and locked-reference history.
+- Single-parent evolutionary descendants with ordered mutations and ancestry comparison.
+- Canonical-reference prompts, imports, review, and configurable approval gates.
+- Animation key poses, intermediate frames, playback, onion skinning, overlays, targeted repair, and approval.
+- Mechanical image validation and immutable generic sprite-package exports.
+- A localhost Streamable HTTP MCP server whose 17 tools reuse the same core workflow rules as the web application.
 
-The repository must remain at:
+## Quick start
 
-```text
-C:\Users\krist\Desktop\coding\EvolutionModelLab
-```
+Requirements:
 
-There is no nested repository folder. Runtime state remains inside this repository:
+- Node.js 22 or newer.
+- Corepack, included with standard Node.js distributions.
 
-- SQLite database: `data/evolution-model-lab.db`
-- Creature originals, contact-sheet originals, derived crops, thumbnails, prompts, active locked references, and immutable manifest/reference history: `workspace/creatures/`
-- Versioned, immutable game-ready packages: `exports/<creature-slug>/export-vNNN/`
+Docker and an OpenAI API key are not required. Development and automated browser coverage are tested on Windows.
 
-These runtime files are ignored by Git. Imported originals are never modified or overwritten; generated thumbnails are stored separately.
-
-## Prerequisites
-
-- Windows 10 or 11
-- Node.js 22 or newer (Node.js 24 is supported)
-- Corepack, included with the installed Node.js distribution
-
-Docker, an OpenAI API key, and a paid image-generation API are not required.
-
-## Exact Windows setup
-
-Open PowerShell in the repository:
-
-```powershell
-Set-Location 'C:\Users\krist\Desktop\coding\EvolutionModelLab'
-corepack enable
-pnpm install
-pnpm dev
-```
-
-If `corepack enable` needs administrator permission, every command can be run without changing the system installation:
+From the repository root:
 
 ```powershell
 corepack pnpm install
 corepack pnpm dev
 ```
 
-Open [http://127.0.0.1:5173](http://127.0.0.1:5173). The single `pnpm dev` command starts the Vite interface, REST server, and MCP server together. All services bind to `127.0.0.1` by default; MCP is available at `http://127.0.0.1:3002/mcp`.
+Open [http://127.0.0.1:5173](http://127.0.0.1:5173). The development command starts the web interface, REST server, and MCP server together. All services bind to `127.0.0.1` by default.
 
-## Concept, design-lock, evolution, and reference workflow
+If Corepack shims are already enabled, `pnpm install` and `pnpm dev` are equivalent. Copy `.env.example` to `.env` only when you need to change ports, storage locations, or upload limits.
 
-1. Choose **New creature** and create `Dunkleosteus`.
-2. Enter a generation brief and create **Concept Round 1**.
-3. Copy the saved prompt into a normal ChatGPT conversation.
-4. Generate or obtain the concept PNGs in ChatGPT. Evolution Model Lab does not fake this step.
-5. Return to the round and import 1–10 PNGs by picker, drag-and-drop, or clipboard paste.
-6. Compare any two candidates independently of parent selection, then select one numbered parent.
-7. Record ordered preserve/anatomy/palette/silhouette guidance, defects, requested changes, forbidden changes, and general notes.
-8. Save the feedback and create a refinement round. The selected parent, feedback snapshot, constraints, prompt, and context are frozen into the new round.
-9. Attach the parent image in ChatGPT and use the saved refinement prompt to request ten refinements.
-10. Import separate PNGs, or choose a contact-sheet layout, configure margins/gaps, inspect every calculated crop, and explicitly confirm the cells to create.
-11. Use **Prompt history** to review or copy every prior concept/refinement prompt and its feedback snapshot.
-12. Open **Design manifest**, record only approved design facts, and keep the ordered immutable, preferred, and forbidden lists in the intended priority order. Fields visibly distinguish project defaults from explicit values.
-13. Save the draft, return to the creature, and choose **Lock selected design**. Review the creature, candidate, source round, image, frozen manifest contents, and consequences before confirming.
-14. The selected original remains unchanged. A verified copy becomes `references/locked-design.png`, while the frozen manifest is written to a new numbered file under `history/manifests/`.
-15. Use **Unlock design** only after reviewing its confirmation. Unlocking returns the creature to refinement but preserves the active reference, frozen manifests, and history. A later relock archives the previous reference under `history/locked-designs/` before activating the new copy.
-16. Reloading or restarting preserves candidates, selection, feedback, prompts, contact-sheet provenance, manifest drafts/versions, lock state, and complete history in SQLite.
-17. Choose **Lineage** on a locked creature, then define a descendant with a new brief and one or more ordered mutations. An unlocked creature cannot seed a branch.
-18. The descendant starts with an immutable Evolution Round 1. Its saved prompt names the approved ancestor, preserves the ancestor's approved constraints, applies mutations in order, and explicitly forbids unrelated anatomy and animation.
-19. Use the evolution prompt with the approved locked ancestor image in ChatGPT, then import, select, and lock a real descendant PNG through the normal candidate workflow.
-20. Return to **Lineage** to compare the ancestor and descendant, inspect the stored mutations, and continue to later generations. Reloading or reopening the app preserves every parent/child relationship.
-21. Open **References** from any locked creature. The locked PNG and frozen manifest version are shown as the current identity authority.
-22. Create a prompt for one reference type at a time. Attach the locked design in ChatGPT, use the saved prompt, and return with one standalone PNG.
-23. Import the PNG into its request. The app preserves the original separately, decodes and hashes it, records canvas/transparency checks and warnings, and never overwrites an earlier attempt.
-24. Compare the image with the locked design and choose **Review and approve**. Approval requires a separate confirmation and only satisfies rules for the exact design lock that seeded the request.
-25. Use **Settings → Mandatory references** to configure the project-level gate. The default requires the locked design, strict side profile, silhouette, and colour/material reference.
-26. A later unlock/relock keeps earlier references visible as history but marks them stale for the new identity authority. Required views must be approved again before Animation Lab can begin.
-27. Open **Animation Lab** after the mandatory reference set is approved. Create a named sequence with type, expected frame count, FPS, loop setting, and the manifest canvas; the app immediately saves a key-pose prompt tied to the exact design lock.
-28. Use the prompt and attached locked/canonical references in ChatGPT, then return with separate real PNG frames. Import by picker, drag/drop, or clipboard and review frame roles, order, duration, notes, edge/canvas warnings, and likely duplicates.
-29. Play at 0.25Ă—, 0.5Ă—, 1Ă—, or 2Ă— speed. Use previous/next onion skins, the locked-reference overlay, and bounds/center/anchor guides to inspect continuity without changing original pixels.
-30. Save an intermediate prompt after at least two key poses. Mark a broken frame before saving a targeted repair prompt; importing its replacement creates a new revision while preserving the broken original in history.
-31. Explicitly approve only when the exact expected frame count is active, the current reference gate still holds, and no frame remains marked for repair.
-32. Open **Export**, review every blocking issue and warning, then choose **Review new export**. The confirmation identifies the next immutable version and whether prompt history will be included.
-33. A successful generic export copies authoritative originals unchanged, creates derived sprite sheets and metadata, and records the package under a new `export-vNNN` directory. Prior versions remain available in export history and are never overwritten.
-34. MCP clients may read workflow context and invoke the same core operations through `/mcp`. Read context first and follow the returned local app routes for image import and visual review.
-35. Lock, unlock, reference approval, animation approval, and export tools require `confirmation=true` only after the user explicitly approves that exact action.
+## Local data
+
+Runtime state stays inside the checkout by default:
+
+- SQLite database: `data/evolution-model-lab.db`
+- Creature originals and derived workspace artifacts: `workspace/creatures/`
+- Immutable export packages: `exports/<creature-slug>/export-vNNN/`
+
+These runtime paths are ignored by Git. SQLite stores guarded relative paths, imported originals are never modified or overwritten, and derived thumbnails, crops, sprite sheets, repairs, and exports are stored separately.
+
+## Typical workflow
+
+1. Create a creature and its first concept round.
+2. Copy the saved prompt into ChatGPT, generate real PNG concepts, and import them by picker, drag/drop, clipboard, or confirmed contact sheet.
+3. Compare candidates, select one parent, save structured feedback, and create immutable refinement rounds until the design is ready.
+4. Complete the Design Manifest and explicitly lock the selected design.
+5. Create descendants from locked ancestors or build and approve the required canonical references one view at a time.
+6. Create an animation after its reference gate passes, review key poses before intermediates, and repair individual frames without discarding history.
+7. Review validation evidence and explicitly create the next immutable generic export version.
+
+See [docs/workflow.md](docs/workflow.md) for the complete state machine and enforced gates.
 
 ## Commands
 
-```powershell
-pnpm dev              # web + REST + MCP servers
-pnpm dev:web          # Vite only
-pnpm dev:server       # Express only
-pnpm dev:mcp          # Streamable HTTP MCP only
-pnpm inspect:mcp      # open the official MCP Inspector for /mcp
-pnpm format           # apply Prettier
-pnpm format:check     # verify formatting
-pnpm lint             # ESLint
-pnpm typecheck        # strict TypeScript checks
-pnpm test             # Vitest unit/integration tests
-pnpm test:e2e         # production-backed Playwright workflows through export
-pnpm build            # production compile/build check
-pnpm db:migrate       # apply committed Drizzle migrations
-pnpm db:generate      # generate a migration after an intentional schema change
-```
+| Command                             | Purpose                                                    |
+| ----------------------------------- | ---------------------------------------------------------- |
+| `pnpm dev`                          | Start web, REST, and MCP development services              |
+| `pnpm dev:web`                      | Start only the Vite web interface                          |
+| `pnpm dev:server`                   | Start only the REST server                                 |
+| `pnpm dev:mcp`                      | Start only the Streamable HTTP MCP server                  |
+| `pnpm inspect:mcp`                  | Inspect `http://127.0.0.1:3002/mcp` with the MCP Inspector |
+| `pnpm format` / `pnpm format:check` | Apply or verify Prettier formatting                        |
+| `pnpm lint`                         | Run ESLint                                                 |
+| `pnpm typecheck`                    | Run strict TypeScript checks                               |
+| `pnpm test`                         | Run Vitest unit and integration tests                      |
+| `pnpm test:e2e`                     | Run production-backed Playwright workflows                 |
+| `pnpm build`                        | Compile packages and create production builds              |
+| `pnpm db:migrate`                   | Apply committed SQLite migrations                          |
+| `pnpm db:generate`                  | Generate a migration after an intentional schema change    |
 
-Use `corepack pnpm` instead of `pnpm` if Corepack shims are not enabled.
+Prefix a command with `corepack` if pnpm shims are not enabled, for example `corepack pnpm test`.
 
-## MCP and ChatGPT connection
+## MCP and ChatGPT
 
-The MCP adapter uses the stable v2 official TypeScript SDK and serves Streamable HTTP at `http://127.0.0.1:3002/mcp`. It calls the same `packages/core` application service as REST; transport handlers do not duplicate workflow rules. Start it with `pnpm dev:mcp` or as part of `pnpm dev`, then inspect it with `pnpm inspect:mcp`.
+The MCP endpoint is `http://127.0.0.1:3002/mcp`; its health check is `http://127.0.0.1:3002/health`. MCP and REST are thin adapters over the same `packages/core` application services.
 
-ChatGPT cannot connect directly to localhost. For private Developer Mode testing, follow the Secure MCP Tunnel and current connection workflow in [docs/chatgpt-setup.md](docs/chatgpt-setup.md), then run the prompts in [plugin/evals/mcp-tool-evals.json](plugin/evals/mcp-tool-evals.json). A live connection still requires the user's eligible authenticated workspace and tunnel credentials; local documentation does not claim that external account step succeeded.
+ChatGPT cannot connect directly to localhost. Private Developer Mode testing requires the documented Secure MCP Tunnel flow and an eligible authenticated ChatGPT workspace. See [docs/chatgpt-setup.md](docs/chatgpt-setup.md) for connection, evaluation, cleanup, and troubleshooting instructions.
 
-The server deliberately does not register image-import tools. Current official MCP/plugin documentation reviewed for this milestone does not establish an interoperable direct ChatGPT-generated file parameter for ordinary tool calls, so picker, drag-and-drop, clipboard, and confirmed contact-sheet import remain the honest handoff. See [docs/image-handoff-spike.md](docs/image-handoff-spike.md) and [docs/mcp-tools.md](docs/mcp-tools.md).
+The MCP server deliberately exposes no fictional image-import tool. Direct ChatGPT-generated file handoff has not been established for this connection, so the supported boundary remains the local picker, drag/drop, clipboard, and contact-sheet workflow. Details are recorded in [docs/image-handoff-spike.md](docs/image-handoff-spike.md).
 
-## Skills and evaluations
+## Development resources
 
-- Use the repository skill at [.agents/skills/evolution-model-lab/SKILL.md](.agents/skills/evolution-model-lab/SKILL.md) for architecture-safe implementation, migrations, validation, and milestone documentation.
-- Use the ChatGPT workflow skill at [plugin/skills/creature-generation/SKILL.md](plugin/skills/creature-generation/SKILL.md) for concepts, controlled refinements, descendants, one-view references, key-pose-first animation, targeted repair, and explicit approvals.
-- MCP connection evals are in [plugin/evals/mcp-tool-evals.json](plugin/evals/mcp-tool-evals.json); skill behavior evals are in [plugin/evals/creature-generation-skill-evals.json](plugin/evals/creature-generation-skill-evals.json).
-
-The optional lightweight ChatGPT component is not included because the tools already return status, blockers, next actions, and local routes, while visual review belongs in the full local interface.
+- [docs/architecture.md](docs/architecture.md): module and persistence boundaries.
+- [docs/mcp-tools.md](docs/mcp-tools.md): MCP inventory, annotations, results, and errors.
+- [docs/security.md](docs/security.md): local binding, path/upload protection, tunnelling, and confirmation risks.
+- [docs/implementation-plan.md](docs/implementation-plan.md): completed milestones, validation evidence, technical decisions, and known limitations.
+- [.agents/skills/evolution-model-lab/SKILL.md](.agents/skills/evolution-model-lab/SKILL.md): repository development skill.
+- [plugin/skills/creature-generation/SKILL.md](plugin/skills/creature-generation/SKILL.md): connected creature-workflow skill.
 
 ## Troubleshooting
 
-- **`pnpm` is not recognized:** run the same command as `corepack pnpm <command>`, or run `corepack enable` from an elevated terminal.
-- **PowerShell blocks `npm.ps1`:** use `pnpm`/`corepack pnpm`; the project does not require invoking the PowerShell npm shim.
-- **Port already in use:** set `SERVER_PORT` or `WEB_PORT` in a local `.env` copied from `.env.example`.
-- **Database is locked:** stop duplicate development-server processes and restart `pnpm dev`. SQLite uses WAL mode and a write timeout.
-- **PNG rejected:** the server checks actual PNG bytes, decoding, size, and dimensions rather than trusting the filename or browser MIME declaration.
-- **Playwright browser missing:** run `pnpm exec playwright install chromium`, then rerun `pnpm test:e2e`.
+- **`pnpm` is not recognized:** run the command as `corepack pnpm <command>` or enable Corepack shims.
+- **PowerShell blocks `npm.ps1`:** use pnpm through Corepack; npm is not required for project commands.
+- **A port is already in use:** stop the conflicting process or override `SERVER_PORT`, `WEB_PORT`, or `MCP_PORT` in `.env`.
+- **The database is locked:** stop duplicate local server processes and restart the development command. SQLite uses WAL mode and a write timeout.
+- **A PNG is rejected:** the server validates actual PNG bytes, decoded dimensions, size, and duplicate hashes rather than trusting the extension or MIME declaration.
+- **Playwright Chromium is missing:** run `pnpm exec playwright install chromium`, then rerun `pnpm test:e2e`.
 
 ## Current limitations
 
-The live ChatGPT Developer Mode run and live skill evaluation require the user's eligible authenticated workspace, associated Secure MCP Tunnel, and runtime key; neither has been falsely marked as passed. The MCP endpoint is localhost-only and unauthenticated; do not expose it as a permanent public service. Direct ChatGPT-generated image-file transfer is not claimed. The current exporter provides a generic sprite package rather than engine-specific import metadata. Reference and export validation prove file integrity and record mechanical warnings; semantic identity matching still requires explicit human approval. Animation continuity checks are image heuristics rather than anatomy recognition, and the app imports finished PNG frames rather than generating or interpolating motion. Evolution currently models one approved parent per descendant; mutations are frozen when the descendant is created, and ancestor/descendant comparison is side-by-side. Local history actors are recorded as `LOCAL_USER`, `MCP_CLIENT`, or `SYSTEM`; authentication and named-user identity are not implemented. Contact-sheet import supports PNG grids with explicit rows, columns, outer margins, and horizontal/vertical gaps; it does not guess irregular cell boundaries. See [docs/implementation-plan.md](docs/implementation-plan.md) for exact status and limitations.
+- Live ChatGPT Developer Mode and creature-skill evaluation still require the user's eligible workspace and Secure MCP Tunnel credentials.
+- The localhost MCP endpoint is unauthenticated and must not be exposed as a permanent public service.
+- Direct ChatGPT-generated image-file transfer is not claimed.
+- The exporter currently provides a generic sprite package rather than engine-specific import metadata.
+- Image/reference/animation checks provide mechanical evidence, not semantic anatomy or identity recognition; visual approval remains human-controlled.
+- Evolution currently models one approved parent per descendant.
+- Candidate, reference, and animation imports currently accept PNG files.
+
+See [docs/implementation-plan.md](docs/implementation-plan.md) for the full limitation list and exact validation status.
