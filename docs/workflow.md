@@ -21,7 +21,7 @@ The complete intended state sequence is:
 
 The application must never skip a gated state silently. Unlocking, locking, reference approval, animation approval, and export require explicit confirmation in the milestone that implements them.
 
-## Rules enforced through Milestone 7
+## Rules enforced by the current release
 
 - A concept round can only be created from `DRAFT`.
 - A concept round is immutable and saves its own prompt/context files.

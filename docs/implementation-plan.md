@@ -12,7 +12,7 @@
 
 Evolution Model Lab is a local-first creature design workspace. ChatGPT supplies images through ordinary conversations; this application persists project state, builds prompts, imports and validates user-provided images, and maintains recoverable history. It does not call paid image-generation APIs and never pretends to generate images.
 
-The current release implements all repository-owned work through **Milestone 9**, building on locked designs, canonical references, reviewed animation sequences, immutable generic exports, and a 17-tool localhost Streamable HTTP MCP adapter. Current Developer Mode and Secure MCP Tunnel instructions, a versioned evaluation set, an honest file-handoff capability decision, and browser-verified manual fallbacks are included. A live ChatGPT connection still requires the user's eligible authenticated workspace and tunnel credentials; that external acceptance run is recorded but not claimed as complete. Plugin skills remain Milestone 10 work.
+The current release implements all repository-owned work through **Milestone 10**, building on locked designs, canonical references, reviewed animation sequences, immutable generic exports, and a 17-tool localhost Streamable HTTP MCP adapter. Current Developer Mode and Secure MCP Tunnel instructions, versioned MCP and skill evaluation sets, an honest file-handoff capability decision, browser-verified manual fallbacks, a repository Codex skill, and a creature-generation plugin skill are included. A live ChatGPT connection and live skill evaluation still require the user's eligible authenticated workspace and tunnel credentials; that external acceptance run is recorded but not claimed as complete.
 
 ## Module boundaries
 
@@ -131,7 +131,7 @@ The table deliberately permits multiple historical attempts of one type while co
 | 7         | Validation and game-ready export                     | Completed                                |
 | 8         | Streamable HTTP MCP server and tools                 | Completed                                |
 | 9         | ChatGPT Developer Mode integration and handoff spike | Local work complete; account run pending |
-| 10        | Skills, evaluations, and optional ChatGPT UI         | Pending                                  |
+| 10        | Skills, evaluations, and optional ChatGPT UI         | Completed                                |
 
 ## Milestone 1 test status
 
@@ -401,11 +401,39 @@ Repository verification on 2026-08-08:
 
 The first E2E run exposed a test timing issue: the synthetic drop occurred before the round route rendered. The test now waits for the concept workspace heading before dispatching the event; the complete suite then passed. This was test synchronization, not an application import failure.
 
+## Milestone 10 acceptance criteria
+
+- [x] `.agents/skills/evolution-model-lab/SKILL.md` has valid minimal YAML frontmatter and a concise repository workflow covering architecture, core-service reuse, guarded paths, originals, validation, and documentation.
+- [x] Repository references document module/path ownership plus additive migrations, baseline validation, regression handling, and milestone handoff.
+- [x] `plugin/skills/creature-generation/SKILL.md` reads authoritative context first, follows persisted prompts/state, uses the selected parent, retains manual import, and requires explicit user choices at every gate.
+- [x] The creature skill requests ten concepts/refinements by default, prevents premature animation, honors mandatory references, generates references one view at a time, orders key poses before intermediates, and prefers targeted repair.
+- [x] Seven focused references cover concept, refinement, evolution, canonical reference, animation, repair, and quality workflows without bloating the main skill.
+- [x] Both skills include discovery metadata with valid 25–64 character descriptions and default prompts that explicitly invoke the matching skill.
+- [x] `plugin/evals/creature-generation-skill-evals.json` provides 11 behavior cases spanning every workflow, tentative confirmation, gating, quality, and unsupported direct-file handoff.
+- [x] Automated tests validate skill frontmatter/name rules, UI metadata, reference existence/linkage, absence of template TODOs, concise size, eval schemas, unique IDs, and registered expected tool names.
+- [x] The optional lightweight ChatGPT component was evaluated and deliberately omitted: MCP results already expose status/blockers/next action/routes, while visual review belongs in the complete local interface.
+- [x] README, plugin package, architecture, workflow, MCP, and implementation-plan documentation describe the final repository package and honest external limitations.
+
+## Milestone 10 test status
+
+Final repository verification on 2026-08-08:
+
+| Command                      | Result                                                                                             |
+| ---------------------------- | -------------------------------------------------------------------------------------------------- |
+| `corepack pnpm format:check` | Passed; source, docs, skill files, discovery metadata, references, and eval fixtures are formatted |
+| `corepack pnpm lint`         | Passed; 0 ESLint errors                                                                            |
+| `corepack pnpm typecheck`    | Passed; packages, REST server, web, and MCP server compile in strict mode                          |
+| `corepack pnpm test`         | Passed; 12 files and 43 Vitest unit/integration/eval/skill-package tests                           |
+| `corepack pnpm test:e2e`     | Passed; 7 production-backed Playwright workflows through persistent export and image fallbacks     |
+| `corepack pnpm build`        | Passed; all packages/servers compiled and Vite transformed 1,680 modules                           |
+
+The skill-creator `init_skill.py` and `quick_validate.py` helpers could not execute because this Windows environment exposes only the Store Python alias and has no Python runtime. The same documented scaffold and metadata shape were applied directly, and `skill-package.test.ts` reproduces and extends the relevant validator checks inside the normal TypeScript suite. No placeholder scaffold content remains.
+
 ## Known limitations
 
-- Live ChatGPT Developer Mode/tunnel evaluation remains an external acceptance step requiring the user's authenticated eligible workspace, associated tunnel ID, and runtime key. Local protocol and fallback evidence passes, but a live connection is not claimed.
+- Live ChatGPT Developer Mode/tunnel and creature-skill evaluation remain an external acceptance step requiring the user's authenticated eligible workspace, associated tunnel ID, and runtime key. Local protocol, skill-package, eval-fixture, and fallback evidence passes, but a live connection is not claimed.
 - The localhost MCP endpoint has no authentication and must not be exposed as a permanent public service. Private development should use Secure MCP Tunnel; public HTTPS exposure needs a deliberate authenticated boundary.
-- Repository and creature-generation skills remain Milestone 10 work.
+- No optional embedded ChatGPT component is included. The local app remains the authoritative visual-review surface, and MCP results provide local navigation routes.
 - Milestone 7 ships one `GENERIC` sprite-package adapter. Engine-specific pivots, import metadata, atlases, and runtime integration remain future adapter work.
 - Export validation combines persisted workflow gates and image heuristics; it does not claim semantic anatomy or identity recognition.
 - Animation continuity checks are practical image heuristics, not semantic anatomy or identity recognition. Warnings require human review and do not auto-reject a frame.

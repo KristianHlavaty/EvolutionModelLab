@@ -1,0 +1,4 @@
+interface:
+  display_name: "Evolution Model Lab"
+  short_description: "Maintain Evolution Model Lab safely"
+  default_prompt: "Use $evolution-model-lab to implement and validate the next scoped repository change."

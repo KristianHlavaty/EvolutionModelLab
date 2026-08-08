@@ -13,7 +13,7 @@ Evolution Model Lab is a pnpm TypeScript monorepo with strict module ownership:
 - `packages/sprite-exporter` owns the format-neutral adapter contract and generic sprite-sheet export implementation.
 - `apps/mcp-server` owns only Streamable HTTP transport, MCP schemas/metadata, safe result projection, and confirmation-aware tool registration. It calls `packages/core` and does not reimplement workflow rules.
 
-## Data flow through Milestone 8
+## Data flow through Milestone 10
 
 ### REST flow
 
@@ -21,7 +21,7 @@ The React page submits a Zod-shaped request or multipart file set to Express. Ex
 
 ### Database ownership
 
-SQLite is authoritative for searchable state. `packages/database/drizzle/0000_milestone_one.sql` creates creature projects, generation rounds, candidates, candidate feedback, history events, and project settings. `0001_milestone_two.sql` additively introduces frozen feedback snapshots, contact-sheet imports, and per-candidate crop provenance. `0002_milestone_three.sql` additively introduces the current Design Manifest, immutable manifest versions, design-lock records, richer history ownership fields, and indexes for current/versioned lookups. `0003_milestone_four.sql` adds guarded lineage/source indexes and ordered `evolution_mutations` rows. `0004_milestone_five.sql` adds immutable canonical-reference requests/imports, their exact design-lock relationship, saved prompt/context paths, validation results, approval state, and reference ownership on history events. Existing project settings are backfilled into version-zero manifest drafts without treating untouched defaults as explicit owner approval.
+SQLite is authoritative for searchable state. `packages/database/drizzle/0000_milestone_one.sql` creates creature projects, generation rounds, candidates, candidate feedback, history events, and project settings. `0001_milestone_two.sql` additively introduces frozen feedback snapshots, contact-sheet imports, and per-candidate crop provenance. `0002_milestone_three.sql` additively introduces the current Design Manifest, immutable manifest versions, design-lock records, richer history ownership fields, and indexes for current/versioned lookups. `0003_milestone_four.sql` adds guarded lineage/source indexes and ordered `evolution_mutations` rows. `0004_milestone_five.sql` adds immutable canonical-reference requests/imports, their exact design-lock relationship, saved prompt/context paths, validation results, approval state, and reference ownership on history events. `0005_milestone_six.sql` adds animation sequences, immutable frame revisions, animation prompts, validation evidence, and animation-owned history relationships. `0006_milestone_seven.sql` adds immutable export runs, monotonic creature-scoped versions, guarded package/summary paths, frozen summaries, and export-owned history. Existing project settings are backfilled into version-zero manifest drafts without treating untouched defaults as explicit owner approval.
 
 The default database is `data/evolution-model-lab.db`. WAL mode, foreign keys, a busy timeout, and committed migrations are applied on startup.
 
@@ -76,6 +76,14 @@ The localhost Streamable HTTP `/mcp` adapter uses the stable v2 official TypeScr
 The server instructions require read-first context, one selected refinement parent, complete mandatory references before animation, explicit confirmation for consequential operations, and honest error handling. Transport confirmation fields make intent explicit, while core remains authoritative for ownership, state, file integrity, and persistence gates.
 
 The MCP Express adapter binds to `127.0.0.1` by default and uses the SDK's host/origin protection. A modern v2 client may negotiate the 2026-07-28 protocol; the server also enables stateless legacy handling for compatible clients. No direct image-import tool is advertised because current documented tool input does not provide an interoperable ChatGPT-generated file handoff. Returned `appRoute` values lead users to the existing validated picker/drop/clipboard workflow.
+
+### ChatGPT and skill flow
+
+The private Developer Mode package keeps connection instructions, Secure MCP Tunnel operations, MCP evaluations, and skill evaluations under `docs/` and `plugin/`. It contains no credentials or public-publication manifest. The creature-generation skill reads authoritative MCP context before acting, routes only the relevant workflow reference into context, uses persisted prompts, and retains the local picker/drop/clipboard boundary when no documented file tool is discovered.
+
+The repository skill under `.agents/skills/evolution-model-lab/` describes module ownership, guarded paths, additive migration practice, complete validation, and milestone handoff. Skill-package tests validate frontmatter, discovery metadata, reference links, and eval fixtures. Skills do not own workflow rules and cannot bypass core confirmation gates.
+
+The optional lightweight ChatGPT component is omitted because MCP results already project status, blockers, next action, and local routes. Candidate, reference, animation, and export visual review remains in `apps/web`.
 
 ### Export flow
 

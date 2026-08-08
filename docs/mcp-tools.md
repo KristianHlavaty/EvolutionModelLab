@@ -78,6 +78,8 @@ No `import_candidate_images` or `import_animation_frames` tool is registered. As
 
 Use the returned round/reference/animation route, then import real PNGs with the local picker, drag-and-drop, or clipboard. This fallback remains part of the product even if a later verified client file mechanism is added.
 
+The creature-generation behavior layer is documented in `plugin/skills/creature-generation/SKILL.md`. It reads context first, uses persisted prompts, preserves workflow gates, and routes detailed concept/refinement/evolution/reference/animation/repair rules through focused references. It does not add tools or replace core validation.
+
 ## Implementation references
 
 - [Official TypeScript SDK server guide](https://github.com/modelcontextprotocol/typescript-sdk/blob/main/docs/server.md)

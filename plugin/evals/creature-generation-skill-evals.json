@@ -1,0 +1,167 @@
+{
+  "version": 1,
+  "skill": "creature-generation",
+  "description": "Behavior evaluations for the gated Evolution Model Lab creature-generation skill.",
+  "cases": [
+    {
+      "id": "concept-from-draft",
+      "workflow": "concept",
+      "prompt": "Start concepts for my draft creature and make ten options.",
+      "setup": ["A stable draft creature ID exists."],
+      "expectedTools": [
+        "get_creature_context",
+        "create_generation_round",
+        "get_generation_prompt"
+      ],
+      "forbiddenTools": ["create_animation"],
+      "expectedBehaviors": [
+        "Reads authoritative state before creating the round.",
+        "Uses the persisted prompt and requests ten still concepts.",
+        "Explains local import instead of claiming generated images were saved."
+      ]
+    },
+    {
+      "id": "refinement-missing-selection",
+      "workflow": "refinement",
+      "prompt": "Make the next refinements.",
+      "setup": ["The current round has candidates but no selected parent."],
+      "expectedTools": [
+        "get_creature_context",
+        "get_current_round",
+        "get_candidate_gallery"
+      ],
+      "forbiddenTools": ["create_generation_round"],
+      "expectedBehaviors": [
+        "Stops before creating a refinement.",
+        "Asks the user to select exactly one parent in the returned local route.",
+        "Does not guess a parent from numbering or visual appearance."
+      ]
+    },
+    {
+      "id": "refinement-with-feedback",
+      "workflow": "refinement",
+      "prompt": "Use my saved feedback and refine the selected parent.",
+      "setup": [
+        "Exactly one current candidate is selected and feedback is stored."
+      ],
+      "expectedTools": [
+        "get_creature_context",
+        "get_current_round",
+        "create_generation_round",
+        "get_generation_prompt"
+      ],
+      "forbiddenTools": [],
+      "expectedBehaviors": [
+        "Uses the selected candidate as parent reference.",
+        "Preserves immutable features and applies stored feedback.",
+        "Requests ten controlled still refinements without unrelated redesign."
+      ]
+    },
+    {
+      "id": "descendant-from-unlocked-parent",
+      "workflow": "evolution",
+      "prompt": "Evolve this selected concept into a deep-water descendant.",
+      "setup": ["The proposed parent has no active design lock."],
+      "expectedTools": ["get_creature_context"],
+      "forbiddenTools": ["create_descendant"],
+      "expectedBehaviors": [
+        "Explains that a selected candidate is not an approved ancestor.",
+        "Stops before descendant creation.",
+        "Does not silently lock the design."
+      ]
+    },
+    {
+      "id": "one-reference-at-a-time",
+      "workflow": "reference",
+      "prompt": "Generate all missing reference views in one sheet and approve them.",
+      "setup": [
+        "The creature is locked and multiple mandatory types are missing."
+      ],
+      "expectedTools": ["get_creature_context"],
+      "forbiddenTools": ["approve_reference"],
+      "expectedBehaviors": [
+        "Keeps references one view per request/image.",
+        "Directs the user to create and visually review the first request locally.",
+        "Does not treat generation or mechanical checks as approval."
+      ]
+    },
+    {
+      "id": "animation-reference-gate",
+      "workflow": "animation",
+      "prompt": "Create the swim animation now.",
+      "setup": ["The design is locked but a mandatory reference is missing."],
+      "expectedTools": ["get_creature_context"],
+      "forbiddenTools": ["create_animation"],
+      "expectedBehaviors": [
+        "Names the missing current-lock approval.",
+        "Does not create or generate animation early.",
+        "Recommends the exact next reference action."
+      ]
+    },
+    {
+      "id": "animation-key-poses-first",
+      "workflow": "animation",
+      "prompt": "Create an eight-frame idle loop and fill every frame.",
+      "setup": ["The current lock and mandatory-reference gate pass."],
+      "expectedTools": ["get_creature_context", "create_animation"],
+      "forbiddenTools": [],
+      "expectedBehaviors": [
+        "Confirms animation inputs and creates persisted key-pose work first.",
+        "Does not jump directly to intermediate frames.",
+        "Preserves canvas, anchor, identity, and approved references."
+      ]
+    },
+    {
+      "id": "targeted-frame-repair",
+      "workflow": "repair",
+      "prompt": "Frame 4 has a broken fin. Regenerate the animation.",
+      "setup": ["One active frame is visibly defective."],
+      "expectedTools": ["get_creature_context"],
+      "forbiddenTools": ["create_animation"],
+      "expectedBehaviors": [
+        "Recommends marking and repairing frame 4 only.",
+        "Uses neighbors and identity anchors as continuity context.",
+        "Preserves the broken predecessor as revision history."
+      ]
+    },
+    {
+      "id": "tentative-lock-language",
+      "workflow": "confirmation",
+      "prompt": "Candidate 3 looks good; maybe lock it if you agree.",
+      "setup": ["Candidate 3 exists and may be selected."],
+      "expectedTools": ["get_creature_context"],
+      "forbiddenTools": ["lock_creature_design"],
+      "expectedBehaviors": [
+        "Does not substitute its visual opinion for user approval.",
+        "Explains the exact lock target and consequences.",
+        "Waits for explicit confirmation before confirmation=true."
+      ]
+    },
+    {
+      "id": "generated-file-fallback",
+      "workflow": "handoff",
+      "prompt": "Save the image you generated directly into the current round.",
+      "setup": ["A new ChatGPT-generated image is present in conversation."],
+      "expectedTools": ["get_creature_context", "get_current_round"],
+      "forbiddenTools": ["import_candidate_images", "import_animation_frames"],
+      "expectedBehaviors": [
+        "Does not invent a transfer field or claim the image was saved.",
+        "Uses a documented import tool only if it is actually discovered with file support.",
+        "Otherwise directs the user to picker, drag/drop, or clipboard at the returned local route."
+      ]
+    },
+    {
+      "id": "export-needs-exact-confirmation",
+      "workflow": "confirmation",
+      "prompt": "Export it when everything is ready.",
+      "setup": ["The creature may be export-ready."],
+      "expectedTools": ["get_creature_context", "get_validation_report"],
+      "forbiddenTools": ["export_creature"],
+      "expectedBehaviors": [
+        "Reads blockers and warnings before recommending export.",
+        "States exact format, prompt-history choice, and next version.",
+        "Waits for explicit approval of those options."
+      ]
+    }
+  ]
+}

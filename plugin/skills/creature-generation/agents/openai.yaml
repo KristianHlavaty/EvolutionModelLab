@@ -1,0 +1,4 @@
+interface:
+  display_name: "Creature Generation"
+  short_description: "Guide gated creature generation workflows"
+  default_prompt: "Use $creature-generation to continue this creature's next safe Evolution Model Lab workflow step."
